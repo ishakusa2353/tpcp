@@ -1,0 +1,6 @@
+{
+  "name": "TradePilot Compounding Bot",
+  "description": "TradePilot Compounding Bot loader.js with Supabase license verification, expiry enforcement, and live popup preview.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
