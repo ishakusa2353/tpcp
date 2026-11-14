@@ -117,6 +117,11 @@ export default function App() {
       <header className="border-b border-slate-800/80 bg-[#070f1c]/90 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-8">
           <div className="flex items-center gap-3 whitespace-nowrap shrink-0">
+            <img
+              src="/assets/aistudio/file_000000007b2c820aa590b734c3908bdc_8d5171c0.png"
+              alt="TradePilot Compounding Bot"
+              className="w-8 h-8 rounded-lg object-cover border border-cyan-400/40"
+            />
             <span className="text-base font-extrabold tracking-tight text-white">
               TradePilot <span className="text-cyan-400">Compounding Bot</span>
             </span>

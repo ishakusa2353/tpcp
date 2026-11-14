@@ -1,10 +1,11 @@
 /* =====================================================================
    TradePilot Compounding Bot — Loader সংস্করণ (Supabase License Gate)
    ---------------------------------------------------------------------
-   প্রথমে লোড হওয়ার পর TradePilot Compounding Bot পপআপ দেখায়।
+   প্রথমে লোড হওয়ার পর Glassmorphism + Soft 3D Bevel পপআপ দেখায়।
    Supabase (ishak_licenses) থেকে License Key ও মেয়াদ যাচাই করে:
    - ম্যাচ না করলে / নিষ্ক্রিয় হলে / মেয়াদ শেষ হলে → Access Denied
-   - যাচাই সফল হলে → মূল ওয়ার্কফ্লো (Candle engine + AI glow + Profit orb) শুরু হয়
+   - যাচাই সফল হলে → সরাসরি মূল ওয়ার্কফ্লো (Candle engine + AI glow + Profit orb) শুরু হয়
+   - অন্য কোনো পপআপ বা Trader ID বাধা থাকবে না
    - মেয়াদ শেষ হওয়ার সাথে সাথে বট স্বয়ংক্রিয়ভাবে বন্ধ হয়ে যায়
 
    বন্ধ: qxUninstall()
@@ -20,6 +21,9 @@
   const SUPABASE_ANON_KEY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiYXp6YXJxaXBscnFxZnl0YWp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NDc4NDUsImV4cCI6MjEwNDMyMzg0NX0.7BPbYW6P50Nh3OrkQU_T1GOwib-iKNUhLFoc1GxiNZo";
   const SUPABASE_TABLES = ["ishak_licenses", "ishak_licences"];
+
+  const TP_LOGO_DATA_URI =
+    "data:image/webp;base64,UklGRjIIAABXRUJQVlA4ICYIAACQJACdASqAAIAAPj0cjEQiIaETDATYIAPEsgBoQjF9y43zenvtkv/Nb+A+7P38eoD8xewJ+ov+N/Mb3jvVN+yHqE/VH/g/6TsK+gB/Pf7D6IHsM/tj7A/7C+mD+2XwX/tV+y/wJ/zP+3f8f8/7zZ4b+M32D7T8tVmX94/Krlr2r/8f/Nv2ZyK/epf5nX2Jkn99/0fp7/S3n6+k/+h7hX6rf8T1pfXf+2nsv/sOTEn1/gHHGZNRWAkkjeT1+0UVtSCbWXIIUWbyZckH9j6ph0iplttgHP8JB8a/2Ks1rZ+AL7YX//3TLBpHouDOtHYscqUW6Yc97DXAZyidckQlh+ZTlPxILHGzHN5yIfIAmFbQq94iSBpyXAd/aqmWcGB2IswuWQIPE4k2yiqbzUmAAP7+XEXvWjYnPofX//CYMUwNAfYWutO72h8IOpDh8Cpue+XYtwsbVhvY06PP3H/cd8PLxwuc8OVb/KWBoMhqlsX/ohRI7u4n2h/C/OG+zRDNckvAilIdB/7btoRCE3Mr+bs03xe7NfevgTH9IDtrXhc15ePThwFx6j2t5m/Mp/7GifVPrPX/8FAaaiLPmlfazn7xTij+eam1nS3G2W30n2/swQ5Z8HoHjuO8JVPALuvwCES8MtS03ZxKNq16iHLq7x9T/grhR3GtwLkmvr3Ae2ftUmd/QDmcLMz0G34KxsssBehj1F8UGDeKSkkd/85FMB23hZBKa6E8AytyToRFYWGLsPUQCpq2Bqyg+M8EK/kW7iotbq+sIo3zzlXePcRmcVeFTmnP3tJg5/ICoJY5W4mmovirfz+4Uz64xE71D0/yntJLp+ZA5axniY2hA69wNVttXdiCH6aSe5jr1JsBexguAJULYf58nghZjXvB9tPcwI/Cpd2JO+/4lSlxXdCMwiAiLfJ9ZwhSc4XSuBxxzKuFxps/geAVfvp2Djb3jQ7RQ86L22iM323zNhwXA8zyT/MxEUbh6qFt8Ex7J4BwnGWBtC4+Hd4E5q4Wm5szzlLxZn5laPKQQ3TCUIv58zYmnasxGXEAc9YywuU0l8rxP8ETgR4uSDeg7CBlcVJeSlFbMeau2gBCYgncfEZk/CpCcBCMmYChsP5Qz1LUIRliQzq6Dc9rrcxeITkKbUM8Fagd/gGZastaNtxfm7jZMVoMNuclGHXmh4mszF1MloG88lltqk1HFLsrKDoGJP7/IhbRIjsruSYx8dQpT3XcrGsnLtljnG1LNb+I/jdfnw+jhfMO+1kFXdiX8Cl7rf1r8+xEFurwm1ydBCWnOfuDVcOsDZf39+EXv/Gs/IQO9pZeOKqrwUTXtMGe6p+Dd8V5nMnxXs+iXyNWDht+iYiY/yXu9oiO0dAMDx19XAuXIFTLOHL8iBfiK+dWuHTnJ5lOR4kgvrNLt5OuPuXPfVwMP4tI0Dl1gvaPQiStJ/FeUZwsFdmkqvGeRjS436Sb6weVVrzkVYOZg6t5oN8Tikp/wzxk7sEB8hTHcXJ/74yYh/HPozUN8jzawxjfkjLKQZ5yii79gzvmHqssTxS8AdHIzMkc2b9qfSh5OM/wEav//5t/zSlsyoYoTDvX8RtTyk9rcTU2R4bx65PkOwtWDnjGn+zp7y6FLuQe21eCINXamK9320PZgHrUiFLUlpHBiD+IT4w21e4DYrfjdvxRqQ3Pj2kRQnVmchKwxriBAGLofacThi3dVEyZxW+njDLF23x2Fl+TDXEITAqq4Llhwq1Wt6T9X08QTcKWp+ELr/OKgfOnwhPN4+WSEby9OmUXv5v69473MvdvmVKG9ahL7+o4dll0pTx5jNFdO/KTPydN5kJD5Nru0d/+ZgBkoyVc94FbYh7HTHeBbWBMg3gdsGt52OJbWPgE7VPfyQD4HpCxMyVQA5F0xKQPrK3XMTsSnPJfuhTgT3qaMn5vCjmIwOz6dopS34VgTRjq9YZKL/lg/+U7p1clIPNYY9GUFM3yLPdhTBAchrHsjAvkgcut6zjuBZh/1Ear7/a+GxeZRnhsdjzuQvzm3bk0blo4vC21eAkZ+3P5fpUvl+qLryxi1NMcGR8SivzQ/R/Wd7kwrmW0CuLUwEXRKc1mMqi8dJeu5pPxFpocNE7uAZm9CcCQerzsiOdrhSY0UgjHkUK6wD7QuMmv/Ym8fgN65dC3AsplM5Q/AjHqQrklFIwRt10WgQhdkvAMz0SuItBT341ODzWYwTOC13NeQnh+S1ELCI9X/77ejcwjWMj8h8CRQOXyqvAvA18t/nS+3ZfAlz5upzlDkbwUT4EBBxrS90sdiewvpSwqek5znSRJ9o2MgUwW3svu2PWfRsVWcflHNceZ2tSByPlcYxDg1g/5rTg/BkjGSlf29NX38BNxlwXpmXZVlpwnHs8KoyoRzKddj7gPwyOxDS7Pq7Ckvttjb7Cbq6N+Tlf66V3x2u+p2VhXYZkIzWhQWErl6DmZzy2/AlXxpQmwf4sveUN/HHP7HmtPa88Ktuv/+ASfrW2hzyAUkRmirY2JgMjWz8hbMliWUdCP8iVDJG55pDjEumNtAhnpAflNIgoNLZG428IxZ3eB/STb6DIiMwP6fYQ1AwwLP/CRANk9DfK1UUW3Y800J2PvvVqdj/uWYS8rJT7gjHLmI0VZk+u2eotozA7cEUCM8mun1sv6335lxY6/FkCnEykjQBdikChwgjBpuPR8vNoED1OYH6J2Ke8ohHyjkzDPnfLC8NDfzjBcAd3gsv+vAHQEI/5Q1Fz/FTIWApn0WXJk+emf4AApBYrWSWQnAdvnAAAA";
 
   const decoder = new TextDecoder();
   let qxEngineLive = false;
@@ -319,215 +323,6 @@
   window.WebSocket = HookedWS;
 
   /* ===================================================================
-     অংশ ১.৫ — Trader ID যাচাই (Buy/Sell চাপলে)
-     -------------------------------------------------------------------
-     যাচাই না থাকলে #trade-button-এর Buy/Sell ক্লিক আটকে পপআপ দেখায়।
-     যাচাই /api/verify দিয়ে; সাইনআপ লিংক ও মিনিমাম ব্যালেন্স API থেকে।
-     =================================================================== */
-  const APP_TITLE = "TradePilot Compounding Bot";
-  const SITE_ORIGIN = "https://fluxproapu.netlify.app";
-  const VERIFY_SESSION_KEY = "flux_pro_verify_v1";
-  const VERIFY_URL = SITE_ORIGIN + "/api/verify";
-  const CONFIG_URL = SITE_ORIGIN + "/api/config";
-  let verifyGate = { ok: false, traderId: null, expiresAt: 0, cfg: null };
-  let verifyOverlay = null;
-  let verifyBusy = false;
-
-  const readVerifySession = () => {
-    try {
-      const s = JSON.parse(localStorage.getItem(VERIFY_SESSION_KEY) || "null");
-      if (s && s.ok && s.expiresAt && Date.now() < s.expiresAt) {
-        verifyGate = { ok: true, traderId: s.traderId || null, expiresAt: s.expiresAt, cfg: s.cfg || null };
-        return true;
-      }
-    } catch (_) {}
-    return false;
-  };
-  const saveVerifySession = (traderId, cfg) => {
-    const expiresAt = Date.now() + 7 * 86400000;
-    verifyGate = { ok: true, traderId, expiresAt, cfg: cfg || null };
-    try {
-      localStorage.setItem(VERIFY_SESSION_KEY, JSON.stringify({ ok: true, traderId, expiresAt, cfg }));
-    } catch (_) {}
-  };
-  const moneyFmt = (n) => (typeof n === "number" && isFinite(n) ? "$" + n.toFixed(2).replace(/\.00$/, "") : null);
-
-  const ensureVerifyStyle = () => {
-    if (document.getElementById("flux-verify-style")) return;
-    const st = document.createElement("style");
-    st.id = "flux-verify-style";
-    st.textContent = `
-      #flux-verify-host{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(4,10,20,.88);backdrop-filter:blur(10px);font-family:'Plus Jakarta Sans',system-ui,sans-serif}
-      #flux-verify-card{position:relative;width:min(100%,380px);padding:26px 22px 22px;border-radius:20px;color:#e2f1ff;text-align:center;background:linear-gradient(165deg,rgba(10,22,40,.98),rgba(5,12,24,.99));border:1.5px solid rgba(34,211,238,.45);box-shadow:0 24px 80px rgba(0,0,0,.65),0 0 36px rgba(6,182,212,.22)}
-      #flux-verify-card h2{margin:0 0 6px;font:800 1.02rem 'Orbitron',system-ui,sans-serif;letter-spacing:.05em;background:linear-gradient(90deg,#ffffff,#67e8f9 55%,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
-      #flux-verify-card p{margin:0 0 14px;font-size:12px;color:#8fb0d6;line-height:1.45}
-      #flux-verify-card label{display:block;text-align:left;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#67e8f9;margin-bottom:8px}
-      #flux-verify-id{width:100%;height:46px;padding:0 14px;border-radius:12px;border:1.5px solid rgba(34,211,238,.38);background:rgba(8,18,34,.9);color:#e2f1ff;font-size:15px;box-sizing:border-box}
-      #flux-verify-id:focus{outline:none;border-color:#22d3ee;box-shadow:0 0 0 4px rgba(34,211,238,.16)}
-      #flux-verify-btn{width:100%;margin-top:12px;height:46px;border:none;border-radius:12px;cursor:pointer;font:700 14px 'Plus Jakarta Sans',system-ui,sans-serif;color:#04131f;background:linear-gradient(135deg,#06b6d4,#22d3ee 55%,#38bdf8)}
-      #flux-verify-btn:disabled{opacity:.85;cursor:wait}#flux-verify-btn.loading{display:inline-flex;align-items:center;justify-content:center;gap:10px}#flux-verify-btn .spin{width:18px;height:18px;border:2.5px solid rgba(4,19,31,.25);border-top-color:#04131f;border-radius:50%;animation:zrSpin .7s linear infinite;flex-shrink:0}@keyframes zrSpin{to{transform:rotate(360deg)}}
-      #flux-verify-msg{min-height:18px;margin-top:10px;font-size:12px;color:#fca5a5}
-      #flux-verify-msg.ok{color:#86efac}
-      #flux-verify-signup{display:none;margin-top:12px;padding:12px;border-radius:12px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);text-align:left;font-size:12px;color:#cffafe}
-      #flux-verify-signup a{color:#22d3ee;font-weight:700;word-break:break-all}
-      #flux-verify-close{position:absolute;top:10px;right:12px;background:transparent;border:none;color:#8fb0d6;font-size:20px;cursor:pointer}
-    `;
-    document.head.appendChild(st);
-  };
-
-  const loadConfig = () => fetch(CONFIG_URL, { cache: "no-store" }).then((r) => r.json()).catch(() => null);
-
-  const showVerifyPopup = async (reason) => {
-    if (verifyOverlay) return;
-    ensureVerifyStyle();
-    if (!verifyGate.cfg) {
-      const cfg = await loadConfig();
-      if (cfg && cfg.ok) verifyGate.cfg = cfg;
-    }
-    const cfg = verifyGate.cfg || {};
-    const minText = moneyFmt(cfg.min_balance) || "$20";
-    const signup = cfg.sign_up_link || "#";
-    const hostEl = document.createElement("div");
-    hostEl.id = "flux-verify-host";
-    hostEl.innerHTML =
-      '<div id="flux-verify-card">' +
-      '<button type="button" id="flux-verify-close" aria-label="Close">×</button>' +
-      "<h2>TradePilot Compounding Bot</h2>" +
-      "<p>" +
-      (reason || "ট্রেড করতে আগে Trader ID দিয়ে যাচাই করুন।") +
-      "<br/>অ্যাকাউন্টে ন্যূনতম <strong>" +
-      minText +
-      "</strong> ব্যালেন্স থাকতে হবে।</p>" +
-      '<label for="flux-verify-id">Trader ID</label>' +
-      '<input id="flux-verify-id" type="text" inputmode="numeric" maxlength="8" placeholder="৮ ডিজিটের ID" autocomplete="off" />' +
-      '<button type="button" id="flux-verify-btn"><span class="btn-label">যাচাই করুন</span></button>' +
-      '<div id="flux-verify-msg"></div>' +
-      '<div id="flux-verify-signup"><div>এই লিংক থেকে অ্যাকাউন্ট খুলুন / ডিপোজিট করুন:</div>' +
-      '<a id="flux-verify-link" href="' +
-      signup +
-      '" target="_blank" rel="noopener noreferrer">' +
-      signup +
-      "</a></div></div>";
-    document.documentElement.appendChild(hostEl);
-    verifyOverlay = hostEl;
-    const input = hostEl.querySelector("#flux-verify-id");
-    const btn = hostEl.querySelector("#flux-verify-btn");
-    const msg = hostEl.querySelector("#flux-verify-msg");
-    const box = hostEl.querySelector("#flux-verify-signup");
-    const link = hostEl.querySelector("#flux-verify-link");
-    const close = () => {
-      hostEl.remove();
-      verifyOverlay = null;
-    };
-    hostEl.querySelector("#flux-verify-close").addEventListener("click", close);
-    hostEl.addEventListener("click", (e) => {
-      if (e.target === hostEl) close();
-    });
-    input.addEventListener("input", () => {
-      input.value = input.value.replace(/\D/g, "").slice(0, 8);
-    });
-    const run = async () => {
-      const id = String(input.value || "").replace(/^#/, "").trim();
-      if (!/^\d{8}$/.test(id)) {
-        msg.className = "";
-        msg.textContent = "ঠিক ৮ ডিজিটের Trader ID দিন।";
-        return;
-      }
-      if (verifyBusy) return;
-      verifyBusy = true;
-      btn.disabled = true;
-      btn.classList.add("loading");
-      btn.innerHTML = '<span class="spin" aria-hidden="true"></span><span class="btn-label">যাচাই হচ্ছে...</span>';
-      msg.className = "";
-      msg.textContent = "";
-      try {
-        let body = { trader_id: id };
-        let data = null;
-        for (let i = 0; i < 40; i++) {
-          const res = await fetch(VERIFY_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-            cache: "no-store",
-          });
-          data = await res.json().catch(() => ({}));
-          if (data && data.pending && data.job_id) {
-            body = { trader_id: id, job_id: data.job_id };
-            await new Promise((r) => setTimeout(r, Math.max(2, Number(data.poll_after_seconds) || 3) * 1000));
-            continue;
-          }
-          break;
-        }
-        if (data && data.sign_up_link) {
-          link.href = data.sign_up_link;
-          link.textContent = data.sign_up_link;
-          verifyGate.cfg = Object.assign({}, verifyGate.cfg || {}, {
-            sign_up_link: data.sign_up_link,
-            min_balance: data.min_balance,
-          });
-        }
-        if (data && data.qualified) {
-          saveVerifySession(id, verifyGate.cfg);
-          msg.className = "ok";
-          msg.textContent = "যাচাই সম্পন্ন। এখন Buy/Sell করতে পারবেন।";
-          setTimeout(close, 900);
-          return;
-        }
-        box.style.display = "block";
-        if (data && data.status === "low_balance") {
-          const remain = moneyFmt(data.remaining_deposit) || minText;
-          msg.textContent = "ব্যালেন্স কম। আরও " + remain + " ডিপোজিট করুন, তারপর আবার যাচাই করুন।";
-        } else if (data && (data.status === "not_found" || data.status === "invalid")) {
-          msg.textContent =
-            data.status === "invalid"
-              ? "Trader ID সঠিক নয়।"
-              : "এই লিংক দিয়ে অ্যাকাউন্ট খোলা হয়নি। নিচের লিংক থেকে খুলুন।";
-        } else {
-          msg.textContent = (data && data.message) || "যাচাই ব্যর্থ। আবার চেষ্টা করুন।";
-        }
-      } catch (err) {
-        msg.textContent = "নেটওয়ার্ক সমস্যা। আবার চেষ্টা করুন।";
-      } finally {
-        verifyBusy = false;
-        btn.disabled = false;
-        btn.classList.remove("loading");
-        btn.innerHTML = '<span class="btn-label">যাচাই করুন</span>';
-      }
-    };
-    btn.addEventListener("click", run);
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") run();
-    });
-    setTimeout(() => input.focus(), 40);
-  };
-
-  const isTradeButton = (el) => {
-    if (!el || !el.closest) return null;
-    const root = el.closest("#trade-button");
-    if (!root) return null;
-    const btn = el.closest("button");
-    if (!btn || !root.contains(btn)) return null;
-    if (btn.id === "trade-button-up" || btn.classList.contains("JQZcs")) return "up";
-    if (btn.id === "trade-button-down" || btn.classList.contains("twQq3")) return "down";
-    return null;
-  };
-
-  const onTradeClickCapture = (e) => {
-    if (!qxEngineLive || !isLicenseCurrentlyValid()) return;
-    if (!isTradeButton(e.target)) return;
-    if (verifyGate.ok && verifyGate.expiresAt > Date.now()) return;
-    if (!readVerifySession()) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      showVerifyPopup("ট্রেড করতে আগে Trader ID দিয়ে যাচাই করুন।");
-    }
-  };
-  document.addEventListener("click", onTradeClickCapture, true);
-  document.addEventListener("pointerdown", onTradeClickCapture, true);
-  readVerifySession();
-
-  /* ===================================================================
      অংশ ২ — Supabase License Verification & Expiry Watchdog
      =================================================================== */
 
@@ -583,7 +378,7 @@
   const querySupabaseLicense = async (licenseKey) => {
     const cleanKey = String(licenseKey || "").trim();
     if (!cleanKey || cleanKey === "__MAINTENANCE_CONFIG__") {
-      return { ok: false, reason: "Access Denied — Please enter a valid license key." };
+      return { ok: false, reason: "Access Denied — Please enter a valid licence key." };
     }
 
     let lastErr = null;
@@ -603,15 +398,11 @@
           cache: "no-store",
         });
 
-        if (res.status === 404) {
-          continue;
-        }
+        if (res.status === 404) continue;
 
         const payload = await res.json().catch(() => null);
         if (!res.ok) {
-          if (payload && payload.code === "PGRST205") {
-            continue;
-          }
+          if (payload && payload.code === "PGRST205") continue;
           lastErr = (payload && payload.message) || `HTTP ${res.status}`;
           continue;
         }
@@ -630,15 +421,15 @@
       if (lastErr) {
         return { ok: false, reason: "Access Denied — Verification failed (" + lastErr + ")." };
       }
-      return { ok: false, reason: "Access Denied — License key does not match any record." };
+      return { ok: false, reason: "Access Denied — Licence key does not match any record." };
     }
 
     if (String(matchedRow.tier || "").toUpperCase() === "SYSTEM" || matchedRow.key === "__MAINTENANCE_CONFIG__") {
-      return { ok: false, reason: "Access Denied — Invalid license key." };
+      return { ok: false, reason: "Access Denied — Invalid licence key." };
     }
 
     if (matchedRow.active !== true) {
-      return { ok: false, reason: "Access Denied — License key is inactive or disabled." };
+      return { ok: false, reason: "Access Denied — Licence key is inactive or disabled." };
     }
 
     const now = Date.now();
@@ -664,11 +455,10 @@
       }
 
       if (expiresAt != null && now >= expiresAt) {
-        return { ok: false, reason: "Access Denied — License has expired." };
+        return { ok: false, reason: "Access Denied — Licence has expired." };
       }
     }
 
-    // Best-effort non-blocking update of last_used_at / first_login_at
     try {
       fetch(`${SUPABASE_URL}/rest/v1/${activeTable}?key=eq.${encodeURIComponent(cleanKey)}`, {
         method: "PATCH",
@@ -696,7 +486,7 @@
   };
 
   /* ===================================================================
-     অংশ ৩ — TradePilot Compounding Bot পপআপ UI (Shadow DOM)
+     অংশ ৩ — TradePilot Compounding Bot পপআপ (Glassmorphism + Soft 3D + Bevel)
      =================================================================== */
 
   const DEFAULT_CANDLE_SECONDS = 5;
@@ -751,10 +541,6 @@
       :host { all: initial; }
       * { box-sizing: border-box; }
 
-      @keyframes tpScan {
-        0% { transform: translateX(-130%) rotate(10deg); }
-        100% { transform: translateX(230%) rotate(10deg); }
-      }
       @keyframes tpShake {
         0%, 100% { transform: translateX(0); }
         20% { transform: translateX(-6px); }
@@ -766,6 +552,7 @@
         to { transform: rotate(360deg); }
       }
 
+      /* Backdrop mist that makes frosted Glassmorphism pop against live chart */
       .tp-overlay {
         position: fixed;
         inset: 0;
@@ -775,12 +562,13 @@
         justify-content: center;
         padding: 18px;
         background:
-          radial-gradient(ellipse 75% 55% at 50% 0%, rgba(6, 182, 212, .16), transparent 60%),
-          radial-gradient(ellipse 60% 45% at 85% 95%, rgba(14, 165, 233, .12), transparent 55%),
-          rgba(3, 8, 17, .86);
-        backdrop-filter: blur(12px);
+          radial-gradient(circle at 26% 24%, rgba(14, 165, 233, .22), transparent 44%),
+          radial-gradient(circle at 76% 78%, rgba(16, 185, 129, .16), transparent 46%),
+          rgba(3, 8, 18, .62);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
-        transition: opacity .3s ease, visibility .3s ease;
+        transition: opacity .28s ease, visibility .28s ease;
       }
       .tp-overlay.out {
         opacity: 0;
@@ -788,37 +576,48 @@
         pointer-events: none;
       }
 
+      /* Glassmorphism + Soft/Faux 3D + Bevel/Depth Card */
       .tp-card {
         position: relative;
-        width: min(100%, 400px);
-        border-radius: 20px;
+        width: min(100%, 408px);
+        border-radius: 24px;
         overflow: hidden;
-        color: #e6f4ff;
-        border: 1.5px solid rgba(34, 211, 238, .55);
-        background: linear-gradient(175deg, #091322 0%, #050c18 65%, #040914 100%);
+        color: #ecf7ff;
+        background: linear-gradient(
+          155deg,
+          rgba(26, 48, 84, .68) 0%,
+          rgba(11, 24, 46, .76) 52%,
+          rgba(6, 14, 30, .86) 100%
+        );
+        backdrop-filter: blur(26px) saturate(175%);
+        -webkit-backdrop-filter: blur(26px) saturate(175%);
+        /* Bevel border: light specular top-left, deep shadow bottom-right */
+        border-top: 1.5px solid rgba(186, 230, 253, .48);
+        border-left: 1.5px solid rgba(125, 211, 252, .32);
+        border-right: 1.5px solid rgba(15, 23, 42, .72);
+        border-bottom: 2px solid rgba(2, 6, 23, .92);
+        /* Multi-layered 3D depth & glass inner rim */
         box-shadow:
-          0 0 0 1px rgba(103, 232, 249, .1) inset,
-          0 26px 75px rgba(0, 0, 0, .78),
-          0 0 42px rgba(6, 182, 212, .22);
+          0 34px 72px rgba(0, 0, 0, .74),
+          0 12px 28px rgba(6, 182, 212, .16),
+          inset 0 1.5px 1px rgba(255, 255, 255, .28),
+          inset 0 -3px 10px rgba(0, 0, 0, .52);
       }
       .tp-card.shake {
         animation: tpShake .38s ease;
       }
+      /* Specular frosted glass diagonal sheen */
       .tp-card::before {
         content: "";
         position: absolute;
-        inset: -35%;
+        inset: 0;
         pointer-events: none;
-        background: linear-gradient(108deg, transparent 42%, rgba(34, 211, 238, .06) 50%, transparent 58%);
-        animation: tpScan 5.5s ease-in-out infinite;
-      }
-
-      /* Top cyan accent rim */
-      .tp-top-rim {
-        height: 2px;
-        width: 100%;
-        background: linear-gradient(90deg, transparent, #22d3ee 35%, #38bdf8 65%, transparent);
-        opacity: .9;
+        background: linear-gradient(
+          132deg,
+          rgba(255, 255, 255, .14) 0%,
+          rgba(255, 255, 255, .03) 28%,
+          transparent 54%
+        );
       }
 
       /* Header Row */
@@ -828,25 +627,40 @@
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        padding: 15px 16px 13px;
-        border-bottom: 1px solid rgba(34, 211, 238, .12);
+        padding: 16px 17px 14px;
+        border-bottom: 1px solid rgba(186, 230, 253, .12);
+        box-shadow: 0 1px 0 rgba(0, 0, 0, .35);
       }
       .tp-brand {
         display: flex;
         align-items: center;
-        gap: 11px;
+        gap: 12px;
         min-width: 0;
       }
+      /* Soft 3D Beveled Logo Medallion */
       .tp-logo-box {
-        width: 40px;
-        height: 40px;
-        border-radius: 11px;
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
         flex-shrink: 0;
+        overflow: hidden;
+        background: linear-gradient(145deg, rgba(18, 36, 64, .9), rgba(6, 13, 26, .95));
+        border-top: 1.5px solid rgba(186, 230, 253, .5);
+        border-left: 1.5px solid rgba(125, 211, 252, .35);
+        border-right: 1px solid rgba(2, 6, 23, .8);
+        border-bottom: 1.5px solid rgba(2, 6, 23, .95);
+        box-shadow:
+          0 8px 18px rgba(0, 0, 0, .52),
+          0 0 18px rgba(34, 211, 238, .22),
+          inset 0 1px 1px rgba(255, 255, 255, .25);
         display: grid;
         place-items: center;
-        background: radial-gradient(circle at 30% 25%, rgba(34, 211, 238, .22), rgba(8, 20, 38, .95));
-        border: 1.5px solid rgba(34, 211, 238, .55);
-        box-shadow: 0 0 16px rgba(6, 182, 212, .25);
+      }
+      .tp-logo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
       }
       .tp-brand-text {
         min-width: 0;
@@ -861,33 +675,35 @@
         margin: 0;
         font: 800 14.5px/1.15 "Plus Jakarta Sans", system-ui, sans-serif;
         letter-spacing: -.01em;
-        color: #f0f9ff;
+        color: #f8fafc;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
       .tp-title span {
-        color: #22d3ee;
+        color: #38bdf8;
       }
       .tp-badge-bot {
         display: inline-flex;
         align-items: center;
-        padding: 2px 6px;
-        border-radius: 5px;
-        font: 800 9.5px/1 "Orbitron", sans-serif;
+        padding: 3px 7px;
+        border-radius: 6px;
+        font: 800 9px/1 "Orbitron", sans-serif;
         letter-spacing: .06em;
         color: #fff;
-        background: linear-gradient(135deg, #ef4444, #dc2626);
-        box-shadow: 0 0 10px rgba(239, 68, 68, .4);
+        background: linear-gradient(180deg, #f87171 0%, #dc2626 100%);
+        border-top: 1px solid rgba(255, 255, 255, .45);
+        border-bottom: 1px solid rgba(127, 29, 29, .9);
+        box-shadow: 0 3px 8px rgba(220, 38, 38, .42), inset 0 1px 0 rgba(255, 255, 255, .3);
         flex-shrink: 0;
       }
       .tp-subtitle {
         margin: 3px 0 0;
         font: 700 9.5px/1.1 "JetBrains Mono", monospace;
-        letter-spacing: .09em;
+        letter-spacing: .07em;
         text-transform: uppercase;
-        color: #7dd3fc;
-        opacity: .85;
+        color: #93c5fd;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -900,80 +716,99 @@
         flex-shrink: 0;
       }
       .tp-std-chip {
-        height: 30px;
+        height: 29px;
         padding: 0 9px;
-        border-radius: 8px;
-        border: 1px solid rgba(34, 211, 238, .28);
-        background: rgba(12, 28, 48, .85);
-        color: #7dd3fc;
-        font: 700 10.5px/1 "JetBrains Mono", monospace;
+        border-radius: 9px;
+        background: linear-gradient(180deg, rgba(30, 58, 95, .62), rgba(12, 26, 48, .78));
+        border-top: 1px solid rgba(186, 230, 253, .3);
+        border-bottom: 1px solid rgba(2, 6, 23, .8);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .15);
+        color: #bae6fd;
+        font: 700 10px/1 "JetBrains Mono", monospace;
         display: inline-flex;
         align-items: center;
         justify-content: center;
       }
       .tp-live-chip {
-        height: 26px;
+        height: 27px;
         padding: 0 9px;
         border-radius: 999px;
-        border: 1px solid rgba(52, 211, 153, .45);
-        background: rgba(16, 185, 129, .18);
+        border-top: 1px solid rgba(167, 243, 208, .45);
+        border-bottom: 1px solid rgba(6, 78, 59, .8);
+        background: linear-gradient(180deg, rgba(16, 185, 129, .34), rgba(5, 150, 105, .24));
+        box-shadow: 0 3px 10px rgba(16, 185, 129, .22), inset 0 1px 0 rgba(255, 255, 255, .2);
         color: #6ee7b7;
-        font: 800 10px/1 "Plus Jakarta Sans", sans-serif;
+        font: 800 9.5px/1 "Plus Jakarta Sans", sans-serif;
         letter-spacing: .05em;
         display: inline-flex;
         align-items: center;
         justify-content: center;
       }
       .tp-live-chip.locked {
-        border-color: rgba(251, 191, 36, .45);
-        background: rgba(245, 158, 11, .16);
-        color: #fcd34d;
+        border-top-color: rgba(253, 230, 138, .45);
+        border-bottom-color: rgba(120, 53, 15, .85);
+        background: linear-gradient(180deg, rgba(245, 158, 11, .3), rgba(180, 83, 9, .22));
+        box-shadow: 0 3px 10px rgba(245, 158, 11, .18), inset 0 1px 0 rgba(255, 255, 255, .18);
+        color: #fde68a;
       }
       .tp-live-chip.denied {
-        border-color: rgba(248, 113, 113, .5);
-        background: rgba(239, 68, 68, .18);
-        color: #fca5a5;
+        border-top-color: rgba(254, 202, 202, .45);
+        border-bottom-color: rgba(127, 29, 29, .9);
+        background: linear-gradient(180deg, rgba(239, 68, 68, .35), rgba(185, 28, 28, .26));
+        box-shadow: 0 3px 10px rgba(239, 68, 68, .22), inset 0 1px 0 rgba(255, 255, 255, .18);
+        color: #fecaca;
       }
       .tp-min-btn {
-        width: 28px;
-        height: 28px;
+        width: 29px;
+        height: 29px;
         border-radius: 50%;
-        border: 1px solid rgba(148, 163, 184, .28);
-        background: rgba(15, 29, 48, .9);
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, .28);
+        border-bottom: 1.5px solid rgba(2, 6, 23, .9);
+        background: linear-gradient(180deg, rgba(30, 48, 78, .82), rgba(11, 21, 40, .92));
+        box-shadow: 0 4px 8px rgba(0, 0, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .2);
         color: #cbd5e1;
         font-size: 16px;
         line-height: 1;
         cursor: pointer;
         display: grid;
         place-items: center;
-        transition: background .15s, border-color .15s;
+        transition: transform .12s, filter .15s;
       }
       .tp-min-btn:hover {
-        background: rgba(34, 211, 238, .16);
-        border-color: rgba(34, 211, 238, .5);
+        filter: brightness(1.18);
         color: #fff;
+      }
+      .tp-min-btn:active {
+        transform: translateY(1px);
       }
 
       /* Body */
       .tp-body {
         position: relative;
-        padding: 14px 16px 15px;
+        padding: 15px 17px 16px;
       }
       .tp-body.collapsed {
         display: none;
       }
 
-      /* Info Panel (matches MARKET ASSET / LIVE QUOTE box) */
+      /* Debossed / Recessed Soft-3D Info Well */
       .tp-info-box {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        padding: 11px 13px;
-        border-radius: 12px;
-        background: rgba(9, 20, 36, .88);
-        border: 1px solid rgba(34, 211, 238, .16);
-        margin-bottom: 14px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(4, 10, 22, .68) 0%, rgba(10, 22, 42, .54) 100%);
+        border-top: 1px solid rgba(0, 0, 0, .72);
+        border-left: 1px solid rgba(0, 0, 0, .45);
+        border-right: 1px solid rgba(186, 230, 253, .12);
+        border-bottom: 1px solid rgba(186, 230, 253, .18);
+        box-shadow:
+          inset 0 4px 10px rgba(0, 0, 0, .58),
+          0 1px 0 rgba(255, 255, 255, .07);
+        margin-bottom: 15px;
       }
       .tp-info-left {
         min-width: 0;
@@ -983,12 +818,13 @@
         font: 700 9.5px/1.1 "JetBrains Mono", monospace;
         letter-spacing: .09em;
         text-transform: uppercase;
-        color: #64748b;
+        color: #7c93b5;
         margin-bottom: 4px;
       }
       .tp-info-main {
         font: 800 13.5px/1.2 "Plus Jakarta Sans", sans-serif;
-        color: #22d3ee;
+        color: #38bdf8;
+        text-shadow: 0 0 14px rgba(56, 189, 248, .28);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -999,7 +835,7 @@
       }
       .tp-info-right .tp-info-kicker {
         color: #7dd3fc;
-        opacity: .8;
+        opacity: .85;
       }
       .tp-info-val {
         font: 700 12.5px/1.2 "JetBrains Mono", monospace;
@@ -1019,64 +855,84 @@
         font: 700 10.5px/1 "JetBrains Mono", monospace;
         letter-spacing: .09em;
         text-transform: uppercase;
-        color: #94a3b8;
+        color: #a5b8d4;
       }
+
+      /* Extruded 3D Paste Pill */
       .tp-paste-pill {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        height: 26px;
-        padding: 0 10px;
-        border-radius: 8px;
-        border: 1px solid rgba(34, 211, 238, .4);
-        background: rgba(6, 182, 212, .12);
-        color: #67e8f9;
+        height: 27px;
+        padding: 0 11px;
+        border-radius: 9px;
+        border: none;
+        border-top: 1px solid rgba(165, 243, 252, .55);
+        border-bottom: 1.5px solid rgba(8, 51, 68, .9);
+        background: linear-gradient(180deg, rgba(34, 211, 238, .28), rgba(6, 182, 212, .16));
+        box-shadow: 0 3px 8px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .25);
+        color: #a5f3fc;
         font: 700 11px/1 "Plus Jakarta Sans", sans-serif;
         cursor: pointer;
-        transition: background .15s, border-color .15s, transform .12s;
+        transition: transform .12s, filter .15s;
       }
       .tp-paste-pill:hover {
-        background: rgba(6, 182, 212, .24);
-        border-color: #22d3ee;
+        filter: brightness(1.16);
       }
       .tp-paste-pill:active {
-        transform: scale(.97);
+        transform: translateY(1.5px);
       }
 
-      /* License Input Control Row (matches - [ value ] + geometry) */
+      /* Recessed Input + Raised 3D Side Buttons */
       .tp-input-group {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-bottom: 14px;
+        margin-bottom: 15px;
       }
       .tp-side-btn {
-        width: 42px;
-        height: 44px;
+        width: 44px;
+        height: 45px;
         flex-shrink: 0;
-        border-radius: 11px;
-        border: 1px solid rgba(148, 163, 184, .2);
-        background: rgba(13, 25, 44, .92);
+        border-radius: 12px;
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, .24);
+        border-left: 1px solid rgba(255, 255, 255, .12);
+        border-bottom: 2px solid rgba(2, 6, 23, .95);
+        background: linear-gradient(180deg, rgba(30, 52, 86, .76), rgba(11, 22, 42, .9));
+        box-shadow:
+          0 5px 12px rgba(0, 0, 0, .42),
+          inset 0 1px 0 rgba(255, 255, 255, .18);
         color: #cbd5e1;
         font: 700 15px/1 "Plus Jakarta Sans", sans-serif;
         cursor: pointer;
         display: grid;
         place-items: center;
-        transition: border-color .15s, background .15s, color .15s;
+        transition: transform .12s, filter .15s, color .15s;
       }
       .tp-side-btn:hover {
-        border-color: rgba(34, 211, 238, .5);
-        background: rgba(20, 38, 64, .95);
+        filter: brightness(1.16);
         color: #67e8f9;
       }
+      .tp-side-btn:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .45);
+      }
+
       .tp-key-input {
         flex: 1;
         min-width: 0;
-        height: 44px;
+        height: 45px;
         padding: 0 12px;
-        border-radius: 11px;
-        border: 1.5px solid rgba(34, 211, 238, .28);
-        background: rgba(7, 15, 28, .95);
+        border-radius: 12px;
+        border: 1px solid transparent;
+        border-top: 1.5px solid rgba(0, 0, 0, .75);
+        border-left: 1px solid rgba(0, 0, 0, .5);
+        border-bottom: 1px solid rgba(186, 230, 253, .22);
+        background: linear-gradient(180deg, rgba(4, 10, 22, .85), rgba(8, 18, 35, .75));
+        box-shadow:
+          inset 0 4px 10px rgba(0, 0, 0, .72),
+          0 1px 0 rgba(255, 255, 255, .08);
         color: #f8fafc;
         font: 600 13px/1 "JetBrains Mono", monospace;
         text-align: center;
@@ -1084,55 +940,69 @@
         transition: border-color .18s, box-shadow .18s;
       }
       .tp-key-input::placeholder {
-        color: #475569;
+        color: #64748b;
         font-weight: 500;
         letter-spacing: 0;
       }
       .tp-key-input:focus {
         outline: none;
-        border-color: #22d3ee;
-        box-shadow: 0 0 0 3px rgba(34, 211, 238, .18);
+        border-color: rgba(56, 189, 248, .65);
+        box-shadow:
+          inset 0 4px 10px rgba(0, 0, 0, .72),
+          0 0 0 3px rgba(34, 211, 238, .22);
       }
 
-      /* Duration (Seconds) Pills */
+      /* Duration (Seconds) 3D Beveled Pills */
       .tp-ready-tag {
         font: 700 10.5px/1 "JetBrains Mono", monospace;
         letter-spacing: .06em;
-        color: #22d3ee;
+        color: #38bdf8;
       }
       .tp-dur-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
         gap: 7px;
-        margin-bottom: 15px;
+        margin-bottom: 16px;
       }
       .tp-dur-btn {
-        height: 36px;
-        border-radius: 10px;
-        border: 1px solid rgba(148, 163, 184, .18);
-        background: rgba(11, 22, 39, .9);
-        color: #94a3b8;
+        height: 37px;
+        border-radius: 11px;
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, .2);
+        border-bottom: 2px solid rgba(2, 6, 23, .92);
+        background: linear-gradient(180deg, rgba(24, 44, 76, .7), rgba(10, 20, 38, .85));
+        box-shadow:
+          0 4px 9px rgba(0, 0, 0, .38),
+          inset 0 1px 0 rgba(255, 255, 255, .14);
+        color: #9fb4d0;
         font: 700 12.5px/1 "JetBrains Mono", monospace;
         cursor: pointer;
-        transition: all .15s ease;
+        transition: transform .12s, filter .15s, box-shadow .15s, color .15s;
       }
       .tp-dur-btn:hover {
-        border-color: rgba(34, 211, 238, .45);
+        filter: brightness(1.15);
         color: #e2e8f0;
       }
+      .tp-dur-btn:active {
+        transform: translateY(1.5px);
+      }
       .tp-dur-btn.active {
-        border-color: #38bdf8;
         color: #031522;
-        background: linear-gradient(135deg, #06b6d4, #22d3ee);
-        box-shadow: 0 0 18px rgba(6, 182, 212, .48);
+        border-top: 1.5px solid rgba(255, 255, 255, .75);
+        border-bottom: 2px solid #0369a1;
+        background: linear-gradient(180deg, #67e8f9 0%, #22d3ee 48%, #0ea5e9 100%);
+        box-shadow:
+          0 4px 0 #0e7490,
+          0 8px 20px rgba(6, 182, 212, .45),
+          inset 0 1.5px 1px rgba(255, 255, 255, .65);
       }
 
-      /* Primary Action CTA (matches START VEX TRAVEL button) */
+      /* Primary 3D Beveled Glossy CTA Button */
       .tp-cta {
         width: 100%;
-        height: 48px;
+        height: 49px;
         border: none;
-        border-radius: 13px;
+        border-radius: 14px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
@@ -1141,17 +1011,25 @@
         font: 800 13.5px/1 "Orbitron", "Plus Jakarta Sans", sans-serif;
         letter-spacing: .07em;
         text-transform: uppercase;
-        color: #041522;
-        background: linear-gradient(90deg, #06b6d4 0%, #22d3ee 50%, #38bdf8 100%);
-        box-shadow: 0 10px 28px rgba(6, 182, 212, .42), 0 0 0 1px rgba(255, 255, 255, .2) inset;
-        transition: transform .15s, filter .15s, opacity .15s;
+        color: #031522;
+        border-top: 1.5px solid rgba(255, 255, 255, .8);
+        border-bottom: 1.5px solid #075985;
+        background: linear-gradient(180deg, #67e8f9 0%, #22d3ee 42%, #0284c7 100%);
+        box-shadow:
+          0 5px 0 #0369a1,
+          0 14px 30px rgba(6, 182, 212, .46),
+          inset 0 1.5px 1px rgba(255, 255, 255, .7);
+        transition: transform .12s, filter .15s, box-shadow .12s;
       }
       .tp-cta:hover {
-        filter: brightness(1.07);
-        transform: translateY(-1px);
+        filter: brightness(1.06);
       }
       .tp-cta:active {
-        transform: translateY(0);
+        transform: translateY(3px);
+        box-shadow:
+          0 2px 0 #0369a1,
+          0 6px 18px rgba(6, 182, 212, .38),
+          inset 0 1px 0 rgba(255, 255, 255, .55);
       }
       .tp-cta:disabled {
         opacity: .78;
@@ -1169,23 +1047,27 @@
 
       /* Status / Access Denied Banner */
       .tp-msg {
-        margin-top: 11px;
-        padding: 9px 12px;
-        border-radius: 10px;
+        margin-top: 13px;
+        padding: 10px 12px;
+        border-radius: 11px;
         font: 600 12px/1.4 "Plus Jakarta Sans", sans-serif;
         text-align: center;
-        border: 1px solid rgba(248, 113, 113, .45);
-        background: rgba(127, 29, 29, .36);
+        border-top: 1px solid rgba(254, 202, 202, .35);
+        border-bottom: 1.5px solid rgba(127, 29, 29, .85);
+        background: linear-gradient(180deg, rgba(153, 27, 27, .48), rgba(69, 10, 10, .62));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 4px 12px rgba(0, 0, 0, .35);
         color: #fecaca;
       }
       .tp-msg.ok {
-        border-color: rgba(52, 211, 153, .45);
-        background: rgba(6, 78, 59, .38);
+        border-top-color: rgba(167, 243, 208, .4);
+        border-bottom-color: rgba(6, 78, 59, .85);
+        background: linear-gradient(180deg, rgba(6, 95, 70, .52), rgba(6, 78, 59, .62));
         color: #a7f3d0;
       }
       .tp-msg.info {
-        border-color: rgba(56, 189, 248, .38);
-        background: rgba(12, 74, 110, .35);
+        border-top-color: rgba(186, 230, 253, .38);
+        border-bottom-color: rgba(12, 74, 110, .85);
+        background: linear-gradient(180deg, rgba(14, 116, 144, .42), rgba(12, 74, 110, .56));
         color: #bae6fd;
       }
       .tp-msg[hidden] {
@@ -1199,8 +1081,8 @@
         justify-content: center;
         gap: 6px;
         padding: 11px 16px 13px;
-        border-top: 1px solid rgba(34, 211, 238, .12);
-        background: rgba(4, 10, 20, .65);
+        border-top: 1px solid rgba(186, 230, 253, .12);
+        background: linear-gradient(180deg, rgba(6, 14, 28, .45), rgba(3, 8, 18, .72));
         font: 700 10.5px/1 "JetBrains Mono", monospace;
         letter-spacing: .09em;
         text-transform: uppercase;
@@ -1210,28 +1092,18 @@
       @media (max-width: 767px), (pointer: coarse) {
         .tp-overlay {
           backdrop-filter: none;
-          background: rgba(3, 8, 17, .94);
+          -webkit-backdrop-filter: none;
+          background: rgba(3, 8, 18, .88);
         }
       }
     </style>
 
     <div class="tp-overlay">
       <div class="tp-card">
-        <div class="tp-top-rim"></div>
-
         <div class="tp-header">
           <div class="tp-brand">
-            <div class="tp-logo-box" aria-hidden="true">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M4 6.5h16l-2.2 3.2H13.5V19l-3 1.5V9.7H6.2L4 6.5Z" fill="url(#tpG)" />
-                <path d="M14.5 12.2h4.2l-1.5 2.4h-2.7v-2.4Z" fill="#38bdf8" />
-                <defs>
-                  <linearGradient id="tpG" x1="4" y1="6" x2="20" y2="20" gradientUnits="userSpaceOnUse">
-                    <stop stop-color="#67e8f9" />
-                    <stop offset="1" stop-color="#0ea5e9" />
-                  </linearGradient>
-                </defs>
-              </svg>
+            <div class="tp-logo-box">
+              <img class="tp-logo-img" alt="TradePilot Compounding Bot" />
             </div>
             <div class="tp-brand-text">
               <div class="tp-title-row">
@@ -1321,6 +1193,11 @@
     </div>`;
 
   const $ = (s) => root.querySelector(s);
+
+  const tpLogoImg = $(".tp-logo-img");
+  if (tpLogoImg) {
+    tpLogoImg.src = TP_LOGO_DATA_URI;
+  }
 
   /* ===================================================================
      Apple Intelligence / Siri-স্টাইল স্ক্রিন-কিনারার আলো — বট চালু থাকলে
@@ -1629,7 +1506,6 @@
         stopEngineForExpiredLicense("Access Denied — Licence expired. Bot stopped.");
         return;
       }
-      // Every 60s re-check Supabase in case admin revoked or changed expiry
       if (activeLicense && Date.now() - lastRemoteCheckAt >= 60000) {
         lastRemoteCheckAt = Date.now();
         const remote = await querySupabaseLicense(activeLicense.key);
@@ -1725,7 +1601,7 @@
       setMsg("Verified (" + result.license.tier + ") — Starting TradePilot Compounding Bot...", "ok");
       setTimeout(() => {
         finishProSetup(selectedSeconds);
-      }, 450);
+      }, 400);
     } finally {
       setCtaBusy(false);
     }
@@ -1797,10 +1673,6 @@
       WebSocket.prototype.send = nativeSend;
       window.WebSocket = NativeWS;
       host.remove();
-      const vh = document.getElementById("flux-verify-host"); if (vh) vh.remove();
-      const vs = document.getElementById("flux-verify-style"); if (vs) vs.remove();
-      document.removeEventListener("click", onTradeClickCapture, true);
-      document.removeEventListener("pointerdown", onTradeClickCapture, true);
       delete window.__qxCandleConsole;
       delete window.qxUninstall;
     } catch (_) {}
