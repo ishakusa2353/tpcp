@@ -12,6 +12,11 @@
    ===================================================================== */
 (() => {
   "use strict";
+  if (typeof window.qxUninstall === "function") {
+    try {
+      window.qxUninstall();
+    } catch (_) {}
+  }
   if (window.__qxCandleConsole) return;
   window.__qxCandleConsole = true;
 
@@ -564,7 +569,7 @@
         background:
           radial-gradient(circle at 26% 24%, rgba(14, 165, 233, .22), transparent 44%),
           radial-gradient(circle at 76% 78%, rgba(16, 185, 129, .16), transparent 46%),
-          rgba(3, 8, 18, .62);
+          rgba(3, 8, 18, .48);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
@@ -1093,7 +1098,7 @@
         .tp-overlay {
           backdrop-filter: none;
           -webkit-backdrop-filter: none;
-          background: rgba(3, 8, 18, .88);
+          background: rgba(3, 8, 18, .58);
         }
       }
     </style>

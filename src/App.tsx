@@ -287,10 +287,34 @@ export default function App() {
                   <span className="text-slate-400">Expiry Enforcement</span>
                   <span className="text-slate-200">Auto-stops engine when expired</span>
                 </div>
-                <div className="py-2 flex items-center justify-between gap-4">
-                  <span className="text-slate-400">Core Engine</span>
-                  <span className="text-slate-200">WS hook, Candle, AI Glow, Profit Orb</span>
+                <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
+                  <span className="text-slate-400">Trader ID Gate</span>
+                  <span className="text-emerald-400 font-medium">Removed (License only)</span>
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-[#050b14] p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-mono text-cyan-300">Cache-Busted Short JS Loader</span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const snippet = `javascript:(()=>{fetch("${window.location.origin}/loader.js?t="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(eval)})();`;
+                      try {
+                        await navigator.clipboard.writeText(snippet);
+                        setStatusMessage("Copied cache-busted short JS loader!");
+                      } catch {
+                        setStatusMessage("Copy from the snippet box below.");
+                      }
+                    }}
+                    className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 cursor-pointer"
+                  >
+                    Copy Short JS
+                  </button>
+                </div>
+                <code className="block text-[11px] font-mono text-slate-400 break-all select-all">
+                  {`javascript:(()=>{fetch("${typeof window !== "undefined" ? window.location.origin : ""}/loader.js?t="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(eval)})();`}
+                </code>
               </div>
             </div>
 
