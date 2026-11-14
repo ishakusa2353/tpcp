@@ -1,12 +1,14 @@
 /* =====================================================================
-   TradePilot Compounding Bot — Loader সংস্করণ (Supabase License Gate)
+   TradePilot Guard — Loader সংস্করণ (Supabase License Gate + Price Bias)
    ---------------------------------------------------------------------
    প্রথমে লোড হওয়ার পর Glassmorphism + Soft 3D Bevel পপআপ দেখায়।
    Supabase (ishak_licenses) থেকে License Key ও মেয়াদ যাচাই করে:
    - ম্যাচ না করলে / নিষ্ক্রিয় হলে / মেয়াদ শেষ হলে → Access Denied
-   - যাচাই সফল হলে → সরাসরি মূল ওয়ার্কফ্লো (Candle engine + AI glow + Profit orb) শুরু হয়
-   - অন্য কোনো পপআপ বা Trader ID বাধা থাকবে না
-   - মেয়াদ শেষ হওয়ার সাথে সাথে বট স্বয়ংক্রিয়ভাবে বন্ধ হয়ে যায়
+   - যাচাই সফল হলে → মূল ওয়ার্কফ্লো চালু হয়:
+     • BUY ট্রেড নিলে রানিং ক্যান্ডেলের প্রাইস উপরের দিকে (UP) মুভ করে
+     • SELL ট্রেড নিলে রানিং ক্যান্ডেলের প্রাইস নিচের দিকে (DOWN) মুভ করে
+     • AI স্ক্রিন-কিনারার গ্লো ও Profit Orb চালু থাকে
+   - মেয়াদ শেষ হওয়ার সাথে সাথে সব ওয়ার্কফ্লো স্বয়ংক্রিয়ভাবে বন্ধ হয়ে যায়
 
    বন্ধ: qxUninstall()
    ===================================================================== */
@@ -21,7 +23,7 @@
   window.__qxCandleConsole = true;
 
   const STORE_KEY = "qxCandleRoundUi";
-  const LICENSE_STORE_KEY = "tp_compounding_license_v1";
+  const LICENSE_STORE_KEY = "tp_guard_license_v1";
   const SUPABASE_URL = "https://qbazzarqiplrqqfytajz.supabase.co";
   const SUPABASE_ANON_KEY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiYXp6YXJxaXBscnFxZnl0YWp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NDc4NDUsImV4cCI6MjEwNDMyMzg0NX0.7BPbYW6P50Nh3OrkQU_T1GOwib-iKNUhLFoc1GxiNZo";
@@ -31,13 +33,14 @@
     "data:image/webp;base64,UklGRjIIAABXRUJQVlA4ICYIAACQJACdASqAAIAAPj0cjEQiIaETDATYIAPEsgBoQjF9y43zenvtkv/Nb+A+7P38eoD8xewJ+ov+N/Mb3jvVN+yHqE/VH/g/6TsK+gB/Pf7D6IHsM/tj7A/7C+mD+2XwX/tV+y/wJ/zP+3f8f8/7zZ4b+M32D7T8tVmX94/Krlr2r/8f/Nv2ZyK/epf5nX2Jkn99/0fp7/S3n6+k/+h7hX6rf8T1pfXf+2nsv/sOTEn1/gHHGZNRWAkkjeT1+0UVtSCbWXIIUWbyZckH9j6ph0iplttgHP8JB8a/2Ks1rZ+AL7YX//3TLBpHouDOtHYscqUW6Yc97DXAZyidckQlh+ZTlPxILHGzHN5yIfIAmFbQq94iSBpyXAd/aqmWcGB2IswuWQIPE4k2yiqbzUmAAP7+XEXvWjYnPofX//CYMUwNAfYWutO72h8IOpDh8Cpue+XYtwsbVhvY06PP3H/cd8PLxwuc8OVb/KWBoMhqlsX/ohRI7u4n2h/C/OG+zRDNckvAilIdB/7btoRCE3Mr+bs03xe7NfevgTH9IDtrXhc15ePThwFx6j2t5m/Mp/7GifVPrPX/8FAaaiLPmlfazn7xTij+eam1nS3G2W30n2/swQ5Z8HoHjuO8JVPALuvwCES8MtS03ZxKNq16iHLq7x9T/grhR3GtwLkmvr3Ae2ftUmd/QDmcLMz0G34KxsssBehj1F8UGDeKSkkd/85FMB23hZBKa6E8AytyToRFYWGLsPUQCpq2Bqyg+M8EK/kW7iotbq+sIo3zzlXePcRmcVeFTmnP3tJg5/ICoJY5W4mmovirfz+4Uz64xE71D0/yntJLp+ZA5axniY2hA69wNVttXdiCH6aSe5jr1JsBexguAJULYf58nghZjXvB9tPcwI/Cpd2JO+/4lSlxXdCMwiAiLfJ9ZwhSc4XSuBxxzKuFxps/geAVfvp2Djb3jQ7RQ86L22iM323zNhwXA8zyT/MxEUbh6qFt8Ex7J4BwnGWBtC4+Hd4E5q4Wm5szzlLxZn5laPKQQ3TCUIv58zYmnasxGXEAc9YywuU0l8rxP8ETgR4uSDeg7CBlcVJeSlFbMeau2gBCYgncfEZk/CpCcBCMmYChsP5Qz1LUIRliQzq6Dc9rrcxeITkKbUM8Fagd/gGZastaNtxfm7jZMVoMNuclGHXmh4mszF1MloG88lltqk1HFLsrKDoGJP7/IhbRIjsruSYx8dQpT3XcrGsnLtljnG1LNb+I/jdfnw+jhfMO+1kFXdiX8Cl7rf1r8+xEFurwm1ydBCWnOfuDVcOsDZf39+EXv/Gs/IQO9pZeOKqrwUTXtMGe6p+Dd8V5nMnxXs+iXyNWDht+iYiY/yXu9oiO0dAMDx19XAuXIFTLOHL8iBfiK+dWuHTnJ5lOR4kgvrNLt5OuPuXPfVwMP4tI0Dl1gvaPQiStJ/FeUZwsFdmkqvGeRjS436Sb6weVVrzkVYOZg6t5oN8Tikp/wzxk7sEB8hTHcXJ/74yYh/HPozUN8jzawxjfkjLKQZ5yii79gzvmHqssTxS8AdHIzMkc2b9qfSh5OM/wEav//5t/zSlsyoYoTDvX8RtTyk9rcTU2R4bx65PkOwtWDnjGn+zp7y6FLuQe21eCINXamK9320PZgHrUiFLUlpHBiD+IT4w21e4DYrfjdvxRqQ3Pj2kRQnVmchKwxriBAGLofacThi3dVEyZxW+njDLF23x2Fl+TDXEITAqq4Llhwq1Wt6T9X08QTcKWp+ELr/OKgfOnwhPN4+WSEby9OmUXv5v69473MvdvmVKG9ahL7+o4dll0pTx5jNFdO/KTPydN5kJD5Nru0d/+ZgBkoyVc94FbYh7HTHeBbWBMg3gdsGt52OJbWPgE7VPfyQD4HpCxMyVQA5F0xKQPrK3XMTsSnPJfuhTgT3qaMn5vCjmIwOz6dopS34VgTRjq9YZKL/lg/+U7p1clIPNYY9GUFM3yLPdhTBAchrHsjAvkgcut6zjuBZh/1Ear7/a+GxeZRnhsdjzuQvzm3bk0blo4vC21eAkZ+3P5fpUvl+qLryxi1NMcGR8SivzQ/R/Wd7kwrmW0CuLUwEXRKc1mMqi8dJeu5pPxFpocNE7uAZm9CcCQerzsiOdrhSY0UgjHkUK6wD7QuMmv/Ym8fgN65dC3AsplM5Q/AjHqQrklFIwRt10WgQhdkvAMz0SuItBT341ODzWYwTOC13NeQnh+S1ELCI9X/77ejcwjWMj8h8CRQOXyqvAvA18t/nS+3ZfAlz5upzlDkbwUT4EBBxrS90sdiewvpSwqek5znSRJ9o2MgUwW3svu2PWfRsVWcflHNceZ2tSByPlcYxDg1g/5rTg/BkjGSlf29NX38BNxlwXpmXZVlpwnHs8KoyoRzKddj7gPwyOxDS7Pq7Ckvttjb7Cbq6N+Tlf66V3x2u+p2VhXYZkIzWhQWErl6DmZzy2/AlXxpQmwf4sveUN/HHP7HmtPa88Ktuv/+ASfrW2hzyAUkRmirY2JgMjWz8hbMliWUdCP8iVDJG55pDjEumNtAhnpAflNIgoNLZG428IxZ3eB/STb6DIiMwP6fYQ1AwwLP/CRANk9DfK1UUW3Y800J2PvvVqdj/uWYS8rJT7gjHLmI0VZk+u2eotozA7cEUCM8mun1sv6335lxY6/FkCnEykjQBdikChwgjBpuPR8vNoED1OYH6J2Ke8ohHyjkzDPnfLC8NDfzjBcAd3gsv+vAHQEI/5Q1Fz/FTIWApn0WXJk+emf4AApBYrWSWQnAdvnAAAA";
 
   const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
   let qxEngineLive = false;
   let activeLicense = null;
   let licenseWatchdogTimer = null;
   let lastRemoteCheckAt = 0;
 
   /* ===================================================================
-     অংশ ১ — ডেটা ট্র্যাকিং (শুধু পড়া) + WS হুক
+     অংশ ১ — ডেটা ট্র্যাকিং + ফেক প্রাইস বায়াস (BUY → UP, SELL → DOWN) + WS হুক
      =================================================================== */
 
   const state = {
@@ -52,8 +55,18 @@
     ticks: 0,
     events: {},
     sockets: [],
+    decimals: 3,
+    avgStep: 0,
   };
   let lastDataAt = 0;
+
+  // BUY (up) / SELL (down) অ্যাক্টিভ ট্রেড বায়াস স্টেট
+  let activeTrade = null;
+  let tradePushTimer = null;
+  let lastActiveSocket = null;
+  let quotesSocket = null;
+  let quotesUseBinary = false;
+  let selectedSeconds = 5;
 
   const countEvent = (name) => {
     state.events[name] = (state.events[name] || 0) + 1;
@@ -65,6 +78,7 @@
       state.asset = asset;
       state.candle = null;
       state.history = [];
+      state.avgStep = 0;
     }
     state.assetSource = source;
   };
@@ -81,10 +95,155 @@
     state.periodSource = source;
   };
 
+  const detectDecimals = (price) => {
+    const str = String(price);
+    const dot = str.indexOf(".");
+    if (dot < 0) return 2;
+    return Math.min(6, Math.max(2, str.length - dot - 1));
+  };
+
+  const roundToAssetPrecision = (val, decimals) => {
+    const d = decimals || state.decimals || 3;
+    return Number(val.toFixed(d));
+  };
+
+  const getActiveTradeBias = () => {
+    if (!qxEngineLive || !isLicenseCurrentlyValid() || !activeTrade) return null;
+    if (Date.now() >= activeTrade.expiresAt) {
+      activeTrade = null;
+      stopSyntheticPulse();
+      return null;
+    }
+    return activeTrade;
+  };
+
+  const computeBiasedPrice = (asset, rawPrice) => {
+    if (!isFinite(rawPrice)) return rawPrice;
+    const bias = getActiveTradeBias();
+    if (!bias) return rawPrice;
+    if (bias.asset && asset && bias.asset !== asset) return rawPrice;
+
+    const decimals = detectDecimals(rawPrice);
+    if (decimals > state.decimals) state.decimals = decimals;
+
+    if (!isFinite(bias.entryPrice) || bias.entryPrice <= 0) {
+      bias.entryPrice = rawPrice;
+    }
+
+    const pip = Math.pow(10, -decimals);
+    const baseStep = Math.max(pip * 3, state.avgStep * 2.2, rawPrice * 0.00012);
+    const elapsed = Math.max(0, Date.now() - bias.startedAt);
+    const rampDuration = Math.max(1800, bias.durationMs * 0.72);
+    const progress = Math.min(1, elapsed / rampDuration);
+
+    // স্বাভাবিক ক্যান্ডেলের মতো ছোট ফ্ল্যাকচুয়েশন সহ স্মুথ ট্রেন্ড (0.85 → 1.15)
+    bias.step = (bias.step || 0) + 1;
+    const wave = 0.92 + 0.16 * Math.abs(Math.sin(bias.step * 0.75));
+    const offset = baseStep * (1.8 + progress * 9.5) * wave;
+
+    let biased = rawPrice;
+    if (bias.direction === "up") {
+      // BUY → রানিং ক্যান্ডেলের প্রাইস এন্ট্রি/রিয়েল প্রাইস থেকে উপরের দিকে যাবে
+      const floorAnchor = Math.max(rawPrice, bias.entryPrice);
+      const target = floorAnchor + offset;
+      biased = bias.lastFakePrice != null ? Math.max(target, bias.lastFakePrice + baseStep * 0.15) : target;
+    } else if (bias.direction === "down") {
+      // SELL → রানিং ক্যান্ডেলের প্রাইস এন্ট্রি/রিয়েল প্রাইস থেকে নিচের দিকে যাবে
+      const ceilAnchor = Math.min(rawPrice, bias.entryPrice);
+      const target = ceilAnchor - offset;
+      biased = bias.lastFakePrice != null ? Math.min(target, bias.lastFakePrice - baseStep * 0.15) : target;
+    }
+
+    biased = roundToAssetPrecision(biased, decimals);
+    bias.lastFakePrice = biased;
+    return biased;
+  };
+
+  const startSyntheticPulse = () => {
+    stopSyntheticPulse();
+    tradePushTimer = setInterval(() => {
+      const bias = getActiveTradeBias();
+      const sock = quotesSocket || lastActiveSocket;
+      if (!bias || !sock) return;
+      const isSim = Boolean(sock.__tpSimSocket);
+      if (!isSim && sock.readyState !== 1) return;
+      if (Date.now() - lastDataAt < 320) return;
+
+      const targetAsset = bias.asset || state.asset;
+      const basePrice = bias.lastFakePrice || (state.lastTick && state.lastTick.price) || bias.entryPrice;
+      if (!targetAsset || !isFinite(basePrice)) return;
+
+      const nowSec = Date.now() / 1000 + state.serverOffset;
+      const nextPrice = computeBiasedPrice(targetAsset, bias.lastRealPrice || basePrice);
+      let syntheticData;
+      if (quotesUseBinary && !isSim) {
+        const jsonBytes = encoder.encode(JSON.stringify([[targetAsset, Number(nowSec.toFixed(3)), nextPrice]]));
+        const out = new Uint8Array(jsonBytes.length + 1);
+        out[0] = 0x04;
+        out.set(jsonBytes, 1);
+        syntheticData = out.buffer;
+      } else {
+        syntheticData = `42["quotes/stream",[[${JSON.stringify(targetAsset)},${nowSec.toFixed(3)},${nextPrice}]]]`;
+      }
+
+      try {
+        const ev = new MessageEvent("message", {
+          data: syntheticData,
+          origin: "",
+          lastEventId: "",
+          source: null,
+        });
+        ev[SYNTHETIC_EV] = true;
+        sock.dispatchEvent(ev);
+      } catch (_) {}
+    }, 360);
+  };
+
+  const stopSyntheticPulse = () => {
+    if (tradePushTimer) {
+      clearInterval(tradePushTimer);
+      tradePushTimer = null;
+    }
+  };
+
+  const activateTradeBias = (direction, durationSec, assetOverride) => {
+    if (!qxEngineLive || !isLicenseCurrentlyValid()) return;
+    if (direction !== "up" && direction !== "down") return;
+
+    const durSec = Math.max(2, Number(durationSec) || Number(selectedSeconds) || 5);
+    const entry =
+      (state.lastTick && isFinite(state.lastTick.price) && state.lastTick.price) ||
+      (state.candle && isFinite(state.candle.close) && state.candle.close) ||
+      null;
+
+    activeTrade = {
+      direction,
+      asset: assetOverride || state.asset || null,
+      startedAt: Date.now(),
+      durationMs: durSec * 1000,
+      expiresAt: Date.now() + durSec * 1000 + 800,
+      entryPrice: entry,
+      lastRealPrice: entry,
+      lastFakePrice: entry,
+      step: 0,
+    };
+
+    startSyntheticPulse();
+  };
+
   const onTick = (asset, time, price) => {
     if (typeof asset !== "string" || !isFinite(time) || !isFinite(price)) return;
     if (!state.asset) setAsset(asset, "first-tick");
     if (asset !== state.asset) return;
+
+    if (state.lastTick && isFinite(state.lastTick.price)) {
+      const diff = Math.abs(price - state.lastTick.price);
+      if (diff > 0) {
+        state.avgStep = state.avgStep ? state.avgStep * 0.8 + diff * 0.2 : diff;
+      }
+    }
+    const dec = detectDecimals(price);
+    if (dec > state.decimals) state.decimals = dec;
 
     state.ticks++;
     state.serverOffset = time - Date.now() / 1000;
@@ -136,8 +295,81 @@
     lastDataAt = Date.now();
   };
 
+  // অ্যাক্টিভ BUY/SELL বায়াস অনুযায়ী quotes/stream ও history ক্যান্ডেলের প্রাইস মডিফাই করা
+  const rewriteQuotePayload = (data) => {
+    const bias = getActiveTradeBias();
+    if (!bias) return { modified: false, data };
+
+    if (Array.isArray(data)) {
+      if (
+        data.length >= 3 &&
+        typeof data[0] === "string" &&
+        typeof data[1] === "number" &&
+        typeof data[2] === "number"
+      ) {
+        if (!bias.asset || data[0] === bias.asset) {
+          bias.lastRealPrice = data[2];
+          const fake = computeBiasedPrice(data[0], data[2]);
+          if (fake !== data[2]) {
+            data[2] = fake;
+            return { modified: true, data };
+          }
+        }
+        return { modified: false, data };
+      }
+      let modified = false;
+      for (const row of data) {
+        if (
+          Array.isArray(row) &&
+          row.length >= 3 &&
+          typeof row[0] === "string" &&
+          typeof row[1] === "number" &&
+          typeof row[2] === "number"
+        ) {
+          if (!bias.asset || row[0] === bias.asset) {
+            bias.lastRealPrice = row[2];
+            const fake = computeBiasedPrice(row[0], row[2]);
+            if (fake !== row[2]) {
+              row[2] = fake;
+              modified = true;
+            }
+          }
+        }
+      }
+      return { modified, data };
+    }
+
+    if (data && typeof data === "object" && Array.isArray(data.candles) && data.candles.length) {
+      if (!bias.asset || !data.asset || data.asset === bias.asset) {
+        const last = data.candles[data.candles.length - 1];
+        if (Array.isArray(last) && last.length >= 5 && typeof last[2] === "number") {
+          bias.lastRealPrice = last[2];
+          const fake = computeBiasedPrice(data.asset || state.asset, last[2]);
+          if (fake !== last[2]) {
+            last[2] = fake;
+            if (typeof last[3] === "number" && fake > last[3]) last[3] = fake;
+            if (typeof last[4] === "number" && fake < last[4]) last[4] = fake;
+            return { modified: true, data };
+          }
+        }
+      }
+    }
+
+    return { modified: false, data };
+  };
+
   const handlePayload = (data) => {
     if (Array.isArray(data)) {
+      if (
+        data.length >= 3 &&
+        typeof data[0] === "string" &&
+        typeof data[1] === "number" &&
+        typeof data[2] === "number"
+      ) {
+        onTick(data[0], data[1], data[2]);
+        countEvent("quotes/stream");
+        return true;
+      }
       let handled = false;
       for (const row of data) {
         if (Array.isArray(row) && row.length >= 3 && typeof row[0] === "string" && typeof row[1] === "number" && typeof row[2] === "number") {
@@ -146,55 +378,137 @@
         }
       }
       if (handled) countEvent("quotes/stream");
-      return;
+      return handled;
     }
     if (data && typeof data === "object") {
       if (Array.isArray(data.candles)) {
         countEvent("history(candles)");
         onHistory(data);
+        return true;
       }
     }
+    return false;
   };
 
   const parseSocketIoText = (text) => {
-    const m = /^\d+(?:-)?(?:\/[^,]*,)?(\d*)(\[.*)$/s.exec(text);
+    const m = /^(\d+(?:-)?(?:\/[^,]*,)?\d*)(\[.*)$/s.exec(text);
     if (!m) return null;
     try {
       const arr = JSON.parse(m[2]);
-      if (Array.isArray(arr) && typeof arr[0] === "string") return { event: arr[0], data: arr[1] };
+      if (Array.isArray(arr) && typeof arr[0] === "string") return { prefix: m[1], arr, event: arr[0], data: arr[1] };
     } catch (_) {}
     return null;
   };
 
-  const handleIncomingText = (text) => {
-    if (text.length > 2 && (text[0] === "[" || text[0] === "{")) {
-      try {
-        handlePayload(JSON.parse(text));
-      } catch (_) {}
-      return;
-    }
-    const msg = parseSocketIoText(text);
-    if (!msg) return;
-    countEvent(msg.event);
-    const d = msg.data;
-    if (d && d._placeholder) return;
-    if (msg.event === "quotes/stream") handlePayload(d);
-    else if (/history/i.test(msg.event) || (d && Array.isArray(d.candles))) onHistory(d);
-    else if (msg.event === "instruments/update" && d && d.asset) {
-      setAsset(d.asset, "server");
-      if (d.period) setPeriod(d.period, "server");
-    }
+  const detectOrderDirection = (d) => {
+    if (!d || typeof d !== "object") return null;
+    const rawCmd = d.command ?? d.action ?? d.direction ?? d.type ?? d.side;
+    if (rawCmd === 0 || rawCmd === "0") return "up";
+    if (rawCmd === 1 || rawCmd === "1") return "down";
+    const s = String(rawCmd || "").toLowerCase();
+    if (/^(call|buy|up|high|higher)$/.test(s)) return "up";
+    if (/^(put|sell|down|low|lower)$/.test(s)) return "down";
+    return null;
   };
 
-  const handleIncomingBinary = (buf) => {
-    let bytes = new Uint8Array(buf);
-    if (bytes.length && bytes[0] < 10) bytes = bytes.subarray(1);
-    const text = decoder.decode(bytes);
-    try {
-      handlePayload(JSON.parse(text));
-    } catch (_) {
-      handleIncomingText(text);
+  const maybeActivateFromOrder = (d) => {
+    if (!d || typeof d !== "object") return;
+    const dir = detectOrderDirection(d);
+    if (!dir) return;
+    let durSec = Number(d.time || d.duration || selectedSeconds || 5);
+    if (isFinite(Number(d.openTime)) && isFinite(Number(d.closeTime)) && Number(d.closeTime) > Number(d.openTime)) {
+      durSec = Number(d.closeTime) - Number(d.openTime);
     }
+    if (durSec > 3600) durSec = Math.round(durSec / 1000);
+    activateTradeBias(dir, durSec, d.asset || state.asset);
+  };
+
+  const handleIncomingText = (text, ws) => {
+    if (text.length > 2 && (text[0] === "[" || text[0] === "{")) {
+      try {
+        const parsed = JSON.parse(text);
+        const rw = rewriteQuotePayload(parsed);
+        if (handlePayload(rw.data) && ws) quotesSocket = ws;
+        return rw.modified ? JSON.stringify(rw.data) : text;
+      } catch (_) {}
+      return text;
+    }
+    const msg = parseSocketIoText(text);
+    if (!msg) return text;
+    countEvent(msg.event);
+    const d = msg.data;
+    if (d && d._placeholder) {
+      if (msg.event === "quotes/stream" && ws) {
+        quotesSocket = ws;
+        quotesUseBinary = true;
+      }
+      return text;
+    }
+    if (msg.event === "quotes/stream") {
+      if (ws) quotesSocket = ws;
+      const rw = rewriteQuotePayload(d);
+      handlePayload(rw.data);
+      if (rw.modified) {
+        msg.arr[1] = rw.data;
+        return msg.prefix + JSON.stringify(msg.arr);
+      }
+      return text;
+    } else if (/history/i.test(msg.event) || (d && Array.isArray(d.candles))) {
+      if (ws) quotesSocket = ws;
+      const rw = rewriteQuotePayload(d);
+      onHistory(rw.data);
+      if (rw.modified) {
+        msg.arr[1] = rw.data;
+        return msg.prefix + JSON.stringify(msg.arr);
+      }
+      return text;
+    } else if (msg.event === "instruments/update" && d && d.asset) {
+      setAsset(d.asset, "server");
+      if (d.period) setPeriod(d.period, "server");
+    } else if (/orders\/open$/i.test(msg.event)) {
+      maybeActivateFromOrder(d);
+    }
+    return text;
+  };
+
+  const handleIncomingBinary = (buf, ws) => {
+    const origBytes = new Uint8Array(buf);
+    const hasPrefix = origBytes.length > 0 && origBytes[0] < 10;
+    const prefixByte = hasPrefix ? origBytes[0] : null;
+    const bodyBytes = hasPrefix ? origBytes.subarray(1) : origBytes;
+    const text = decoder.decode(bodyBytes);
+
+    try {
+      const parsed = JSON.parse(text);
+      const rw = rewriteQuotePayload(parsed);
+      if (handlePayload(rw.data) && ws) {
+        quotesSocket = ws;
+        quotesUseBinary = true;
+      }
+      if (rw.modified) {
+        const encoded = encoder.encode(JSON.stringify(rw.data));
+        if (hasPrefix) {
+          const out = new Uint8Array(encoded.length + 1);
+          out[0] = prefixByte;
+          out.set(encoded, 1);
+          return out.buffer;
+        }
+        return encoded.buffer;
+      }
+    } catch (_) {
+      const updated = handleIncomingText(text, ws);
+      if (updated !== text) {
+        const encoded = encoder.encode(updated);
+        if (hasPrefix) {
+          const out = new Uint8Array(encoded.length + 1);
+          out[0] = prefixByte;
+          out.set(encoded, 1);
+          return out.buffer;
+        }
+        return encoded.buffer;
+      }
+    }
+    return buf;
   };
 
   const handleOutgoing = (data) => {
@@ -216,21 +530,31 @@
       case "depth/follow":
         if (typeof d === "string") setAsset(d, "client:depth/follow");
         break;
+      case "orders/open":
+      case "s_orders/open":
+      case "orders/create":
+      case "trade":
+        maybeActivateFromOrder(d);
+        break;
     }
   };
 
-  const trackState = (raw) => {
+  const trackAndRewriteRaw = (raw, ws) => {
     try {
-      if (typeof raw === "string") handleIncomingText(raw);
-      else if (raw instanceof ArrayBuffer) handleIncomingBinary(raw);
-      else if (raw instanceof Blob) raw.arrayBuffer().then(handleIncomingBinary).catch(() => {});
+      if (typeof raw === "string") return handleIncomingText(raw, ws);
+      if (raw instanceof ArrayBuffer) return handleIncomingBinary(raw, ws);
     } catch (_) {}
+    return raw;
   };
 
-  const noteSocket = (url) => {
+  const noteSocket = (wsOrUrl) => {
     try {
-      const u = String(url).split("?")[0];
-      if (state.sockets.indexOf(u) < 0) {
+      if (wsOrUrl && typeof wsOrUrl === "object" && "url" in wsOrUrl) {
+        lastActiveSocket = wsOrUrl;
+      }
+      const urlStr = typeof wsOrUrl === "string" ? wsOrUrl : wsOrUrl && wsOrUrl.url;
+      const u = String(urlStr || "").split("?")[0];
+      if (u && state.sockets.indexOf(u) < 0) {
         state.sockets.push(u);
         if (state.sockets.length > 5) state.sockets.shift();
       }
@@ -285,6 +609,8 @@
 
   /* --- হুক: চালু থাকা socket-ও ধরতে MessageEvent.data + send প্যাচ করি --- */
   const PROC = Symbol("qxProcessed");
+  const PATCHED_RAW = Symbol("qxPatchedRaw");
+  const SYNTHETIC_EV = Symbol("qxSyntheticEvent");
   const nativeDataDesc = Object.getOwnPropertyDescriptor(MessageEvent.prototype, "data");
   const nativeGetData = nativeDataDesc.get;
 
@@ -293,24 +619,28 @@
     enumerable: nativeDataDesc.enumerable,
     get() {
       const raw = nativeGetData.call(this);
+      if (this[SYNTHETIC_EV]) return raw;
       // শুধু WebSocket থেকে আসা message ধরি (postMessage/worker বাদ)
       const tgt = this.currentTarget || this.target;
-      if (!(tgt instanceof WebSocket) || !qxEngineLive || !isLicenseCurrentlyValid()) return raw;
+      if (!(tgt instanceof WebSocket || (tgt && tgt.__tpSimSocket === true)) || !qxEngineLive || !isLicenseCurrentlyValid()) {
+        return raw;
+      }
       if (!this[PROC]) {
         this[PROC] = true;
-        noteSocket(tgt.url);
-        trackState(raw);
+        noteSocket(tgt);
+        this[PATCHED_RAW] = trackAndRewriteRaw(raw, tgt);
         try {
           trackDeals(tgt, raw);
         } catch (_) {}
       }
-      return raw;
+      return this[PATCHED_RAW] !== undefined ? this[PATCHED_RAW] : raw;
     },
   });
 
   const nativeSend = WebSocket.prototype.send;
   WebSocket.prototype.send = function (data) {
     try {
+      noteSocket(this);
       handleOutgoing(data);
     } catch (_) {}
     return nativeSend.apply(this, arguments);
@@ -321,11 +651,42 @@
   const HookedWS = new Proxy(NativeWS, {
     construct(target, args) {
       const ws = new target(...args);
-      noteSocket(args[0]);
+      noteSocket(ws);
       return ws;
     },
   });
   window.WebSocket = HookedWS;
+
+  /* --- DOM BUY/SELL ক্লিক হুক (কোনো বাধা ছাড়াই শুধু ডিরেকশন ট্রিগার) --- */
+  const detectTradeButtonDirection = (el) => {
+    if (!el || !el.closest) return null;
+    const btn = el.closest("button, [role='button']");
+    if (!btn) return null;
+
+    if (btn.id === "trade-button-up" || btn.classList.contains("JQZcs")) return "up";
+    if (btn.id === "trade-button-down" || btn.classList.contains("twQq3")) return "down";
+
+    const upRoot = btn.closest("#trade-button-up");
+    if (upRoot) return "up";
+    const downRoot = btn.closest("#trade-button-down");
+    if (downRoot) return "down";
+
+    const tradeZone = btn.closest("#trade-button, .deal-buttons, [data-trade-buttons]");
+    if (tradeZone) {
+      const txt = (btn.textContent || btn.getAttribute("aria-label") || "").trim().toLowerCase();
+      if (/\b(up|buy|call|higher)\b/.test(txt)) return "up";
+      if (/\b(down|sell|put|lower)\b/.test(txt)) return "down";
+    }
+    return null;
+  };
+
+  const onTradeDirectionCapture = (e) => {
+    if (!qxEngineLive || !isLicenseCurrentlyValid()) return;
+    const dir = detectTradeButtonDirection(e.target);
+    if (!dir) return;
+    activateTradeBias(dir, selectedSeconds, state.asset);
+  };
+  document.addEventListener("pointerdown", onTradeDirectionCapture, true);
 
   /* ===================================================================
      অংশ ২ — Supabase License Verification & Expiry Watchdog
@@ -491,7 +852,7 @@
   };
 
   /* ===================================================================
-     অংশ ৩ — TradePilot Compounding Bot পপআপ (Glassmorphism + Soft 3D + Bevel)
+     অংশ ৩ — TradePilot Guard পপআপ (Glassmorphism + Soft 3D + Bevel)
      =================================================================== */
 
   const DEFAULT_CANDLE_SECONDS = 5;
@@ -557,7 +918,6 @@
         to { transform: rotate(360deg); }
       }
 
-      /* Backdrop mist that makes frosted Glassmorphism pop against live chart */
       .tp-overlay {
         position: fixed;
         inset: 0;
@@ -581,7 +941,6 @@
         pointer-events: none;
       }
 
-      /* Glassmorphism + Soft/Faux 3D + Bevel/Depth Card */
       .tp-card {
         position: relative;
         width: min(100%, 408px);
@@ -596,12 +955,10 @@
         );
         backdrop-filter: blur(26px) saturate(175%);
         -webkit-backdrop-filter: blur(26px) saturate(175%);
-        /* Bevel border: light specular top-left, deep shadow bottom-right */
         border-top: 1.5px solid rgba(186, 230, 253, .48);
         border-left: 1.5px solid rgba(125, 211, 252, .32);
         border-right: 1.5px solid rgba(15, 23, 42, .72);
         border-bottom: 2px solid rgba(2, 6, 23, .92);
-        /* Multi-layered 3D depth & glass inner rim */
         box-shadow:
           0 34px 72px rgba(0, 0, 0, .74),
           0 12px 28px rgba(6, 182, 212, .16),
@@ -611,7 +968,6 @@
       .tp-card.shake {
         animation: tpShake .38s ease;
       }
-      /* Specular frosted glass diagonal sheen */
       .tp-card::before {
         content: "";
         position: absolute;
@@ -625,7 +981,6 @@
         );
       }
 
-      /* Header Row */
       .tp-header {
         position: relative;
         display: flex;
@@ -642,7 +997,6 @@
         gap: 12px;
         min-width: 0;
       }
-      /* Soft 3D Beveled Logo Medallion */
       .tp-logo-box {
         width: 44px;
         height: 44px;
@@ -678,7 +1032,7 @@
       }
       .tp-title {
         margin: 0;
-        font: 800 14.5px/1.15 "Plus Jakarta Sans", system-ui, sans-serif;
+        font: 800 15px/1.15 "Plus Jakarta Sans", system-ui, sans-serif;
         letter-spacing: -.01em;
         color: #f8fafc;
         text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
@@ -788,7 +1142,6 @@
         transform: translateY(1px);
       }
 
-      /* Body */
       .tp-body {
         position: relative;
         padding: 15px 17px 16px;
@@ -797,7 +1150,6 @@
         display: none;
       }
 
-      /* Debossed / Recessed Soft-3D Info Well */
       .tp-info-box {
         display: flex;
         align-items: center;
@@ -848,7 +1200,6 @@
         color: #f8fafc;
       }
 
-      /* Section Labels */
       .tp-row-head {
         display: flex;
         align-items: center;
@@ -863,7 +1214,6 @@
         color: #a5b8d4;
       }
 
-      /* Extruded 3D Paste Pill */
       .tp-paste-pill {
         display: inline-flex;
         align-items: center;
@@ -888,7 +1238,6 @@
         transform: translateY(1.5px);
       }
 
-      /* Recessed Input + Raised 3D Side Buttons */
       .tp-input-group {
         display: flex;
         align-items: center;
@@ -957,7 +1306,6 @@
           0 0 0 3px rgba(34, 211, 238, .22);
       }
 
-      /* Duration (Seconds) 3D Beveled Pills */
       .tp-ready-tag {
         font: 700 10.5px/1 "JetBrains Mono", monospace;
         letter-spacing: .06em;
@@ -1002,7 +1350,6 @@
           inset 0 1.5px 1px rgba(255, 255, 255, .65);
       }
 
-      /* Primary 3D Beveled Glossy CTA Button */
       .tp-cta {
         width: 100%;
         height: 49px;
@@ -1050,7 +1397,6 @@
         animation: tpSpin .65s linear infinite;
       }
 
-      /* Status / Access Denied Banner */
       .tp-msg {
         margin-top: 13px;
         padding: 10px 12px;
@@ -1079,7 +1425,6 @@
         display: none;
       }
 
-      /* Footer bar */
       .tp-footer {
         display: flex;
         align-items: center;
@@ -1108,14 +1453,14 @@
         <div class="tp-header">
           <div class="tp-brand">
             <div class="tp-logo-box">
-              <img class="tp-logo-img" alt="TradePilot Compounding Bot" />
+              <img class="tp-logo-img" alt="TradePilot Guard" />
             </div>
             <div class="tp-brand-text">
               <div class="tp-title-row">
-                <h1 class="tp-title">TradePilot <span>Compounding</span></h1>
+                <h1 class="tp-title">TradePilot <span>Guard</span></h1>
                 <span class="tp-badge-bot">BOT</span>
               </div>
-              <p class="tp-subtitle">TradePilot Compounding Bot</p>
+              <p class="tp-subtitle">TradePilot Guard Engine</p>
             </div>
           </div>
 
@@ -1130,7 +1475,7 @@
           <div class="tp-info-box">
             <div class="tp-info-left">
               <div class="tp-info-kicker">BOT ENGINE</div>
-              <div class="tp-info-main">TradePilot Compounding Bot</div>
+              <div class="tp-info-main">TradePilot Guard</div>
             </div>
             <div class="tp-info-right">
               <div class="tp-info-kicker">• LICENSE GATE</div>
@@ -1192,7 +1537,7 @@
 
         <div class="tp-footer">
           <span>↵</span>
-          <span>TRADEPILOT COMPOUNDING BOT</span>
+          <span>TRADEPILOT GUARD</span>
         </div>
       </div>
     </div>`;
@@ -1439,7 +1784,7 @@
   const tpCtaBtn = $(".tp-cta");
   const tpMsg = $(".tp-msg");
 
-  let selectedSeconds = DEFAULT_CANDLE_SECONDS;
+  selectedSeconds = DEFAULT_CANDLE_SECONDS;
   let verifyInFlight = false;
 
   const setMsg = (text, kind) => {
@@ -1483,6 +1828,8 @@
 
   const stopEngineForExpiredLicense = (reason) => {
     qxEngineLive = false;
+    activeTrade = null;
+    stopSyntheticPulse();
     setAiGlow(false);
     removeProfitOrb();
     clearLicenseRecord();
@@ -1603,7 +1950,7 @@
         tpGateStatus.textContent = formatRemaining(result.license.expiresAt, result.license.lifetime);
       }
 
-      setMsg("Verified (" + result.license.tier + ") — Starting TradePilot Compounding Bot...", "ok");
+      setMsg("Verified (" + result.license.tier + ") — Starting TradePilot Guard...", "ok");
       setTimeout(() => {
         finishProSetup(selectedSeconds);
       }, 400);
@@ -1670,6 +2017,8 @@
         clearInterval(licenseWatchdogTimer);
         licenseWatchdogTimer = null;
       }
+      stopSyntheticPulse();
+      activeTrade = null;
       removeAiGlow();
       removeProfitOrb();
       qxEngineLive = false;
@@ -1677,6 +2026,7 @@
       Object.defineProperty(MessageEvent.prototype, "data", nativeDataDesc);
       WebSocket.prototype.send = nativeSend;
       window.WebSocket = NativeWS;
+      document.removeEventListener("pointerdown", onTradeDirectionCapture, true);
       host.remove();
       delete window.__qxCandleConsole;
       delete window.qxUninstall;

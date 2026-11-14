@@ -1,5 +1,14 @@
-import { useEffect, useState } from "react";
-import { Check, Copy, Download, Play, RotateCcw, ShieldCheck } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Check,
+  Copy,
+  Download,
+  Play,
+  RotateCcw,
+  ShieldCheck,
+} from "lucide-react";
 
 declare global {
   interface Window {
@@ -8,7 +17,14 @@ declare global {
   }
 }
 
-const SAMPLE_CANDLES = [
+interface Candle {
+  o: number;
+  c: number;
+  h: number;
+  l: number;
+}
+
+const INITIAL_CANDLES: Candle[] = [
   { o: 128.86, c: 128.79, h: 128.89, l: 128.76 },
   { o: 128.79, c: 128.83, h: 128.85, l: 128.77 },
   { o: 128.83, c: 128.81, h: 128.86, l: 128.78 },
@@ -23,13 +39,26 @@ const SAMPLE_CANDLES = [
   { o: 128.79, c: 128.735, h: 128.8, l: 128.715 },
 ];
 
+class SimQuoteSocket extends EventTarget {
+  __tpSimSocket = true;
+  readyState = 1;
+  url = "wss://ws.tradepilot-sim.local/socket.io/?EIO=3&transport=websocket";
+}
+
 export default function App() {
   const [loaderCode, setLoaderCode] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [loaderMounted, setLoaderMounted] = useState(false);
+  const [candles, setCandles] = useState<Candle[]>(INITIAL_CANDLES);
+  const [liveQuote, setLiveQuote] = useState<number>(128.735);
+  const [activeSide, setActiveSide] = useState<"BUY" | "SELL" | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>(
-    "Ready to test loader.js with live Supabase verification."
+    "Launch loader.js, verify a license, then test BUY (UP) or SELL (DOWN) on the running candle."
   );
+
+  const simSocketRef = useRef<SimQuoteSocket | null>(null);
+  const basePriceRef = useRef<number>(128.735);
+  const tradeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -53,6 +82,56 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
+  // Simulated WebSocket stream so loader.js MessageEvent.prototype.data hook mutates the running candle live
+  useEffect(() => {
+    const sock = new SimQuoteSocket();
+    simSocketRef.current = sock;
+
+    const onQuoteMsg = (ev: Event) => {
+      const msgEv = ev as MessageEvent<string>;
+      const raw = msgEv.data;
+      if (typeof raw !== "string") return;
+      const m = /^\d+(\[.*\])$/.exec(raw);
+      if (!m) return;
+      try {
+        const arr = JSON.parse(m[1]);
+        if (arr[0] === "quotes/stream" && Array.isArray(arr[1]) && Array.isArray(arr[1][0])) {
+          const price = Number(arr[1][0][2]);
+          if (Number.isFinite(price)) {
+            setLiveQuote(price);
+            setCandles((prev) => {
+              const next = [...prev];
+              const last = { ...next[next.length - 1] };
+              last.c = price;
+              if (price > last.h) last.h = price;
+              if (price < last.l) last.l = price;
+              next[next.length - 1] = last;
+              return next;
+            });
+          }
+        }
+      } catch {
+        // ignore parse errors
+      }
+    };
+
+    sock.addEventListener("message", onQuoteMsg);
+
+    const tickInterval = window.setInterval(() => {
+      const jitter = (Math.random() - 0.5) * 0.008;
+      basePriceRef.current = Number((basePriceRef.current + jitter).toFixed(3));
+      const nowSec = (Date.now() / 1000).toFixed(3);
+      const payload = `42["quotes/stream",[["USD/BDT (OTC)",${nowSec},${basePriceRef.current}]]]`;
+      sock.dispatchEvent(new MessageEvent("message", { data: payload }));
+    }, 420);
+
+    return () => {
+      window.clearInterval(tickInterval);
+      sock.removeEventListener("message", onQuoteMsg);
+      if (tradeTimerRef.current) window.clearTimeout(tradeTimerRef.current);
+    };
+  }, []);
+
   const launchLoaderPopup = () => {
     if (window.qxUninstall) {
       window.qxUninstall();
@@ -65,7 +144,7 @@ export default function App() {
     script.src = `/loader.js?t=${Date.now()}`;
     script.onload = () => {
       setLoaderMounted(true);
-      setStatusMessage("loader.js injected — TradePilot Compounding Bot popup is active.");
+      setStatusMessage("loader.js injected — TradePilot Guard popup is active.");
     };
     script.onerror = () => {
       setStatusMessage("Failed to inject /loader.js.");
@@ -80,7 +159,22 @@ export default function App() {
     const existing = document.getElementById("tp-live-loader-script");
     if (existing) existing.remove();
     setLoaderMounted(false);
+    setActiveSide(null);
+    setCandles(INITIAL_CANDLES);
+    basePriceRef.current = 128.735;
+    setLiveQuote(128.735);
     setStatusMessage("Uninstalled via qxUninstall(). Click Launch Popup to test again.");
+  };
+
+  const triggerSimulatedTrade = (side: "BUY" | "SELL") => {
+    setActiveSide(side);
+    if (tradeTimerRef.current) window.clearTimeout(tradeTimerRef.current);
+    tradeTimerRef.current = window.setTimeout(() => setActiveSide(null), 5800);
+    setStatusMessage(
+      side === "BUY"
+        ? "BUY triggered — if license is verified, running candle biases UPWARD."
+        : "SELL triggered — if license is verified, running candle biases DOWNWARD."
+    );
   };
 
   const copyCode = async () => {
@@ -107,9 +201,10 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  const minPrice = 128.7;
-  const maxPrice = 128.91;
-  const toY = (p: number) => 220 - ((p - minPrice) / (maxPrice - minPrice)) * 180;
+  const allValues = candles.flatMap((c) => [c.h, c.l]);
+  const minPrice = Math.min(128.7, ...allValues) - 0.015;
+  const maxPrice = Math.max(128.91, ...allValues) + 0.015;
+  const toY = (p: number) => 220 - ((p - minPrice) / Math.max(0.001, maxPrice - minPrice)) * 180;
 
   return (
     <div className="min-h-screen bg-[#050b14] text-slate-100 flex flex-col">
@@ -119,20 +214,20 @@ export default function App() {
           <div className="flex items-center gap-3 whitespace-nowrap shrink-0">
             <img
               src="/assets/aistudio/file_000000007b2c820aa590b734c3908bdc_8d5171c0.png"
-              alt="TradePilot Compounding Bot"
+              alt="TradePilot Guard"
               className="w-8 h-8 rounded-lg object-cover border border-cyan-400/40"
             />
             <span className="text-base font-extrabold tracking-tight text-white">
-              TradePilot <span className="text-cyan-400">Compounding Bot</span>
+              TradePilot <span className="text-cyan-400">Guard</span>
             </span>
           </div>
 
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
             <a href="#preview" className="hover:text-cyan-300 transition-colors whitespace-nowrap shrink-0">
-              Popup Preview
+              Live Testbed
             </a>
             <a href="#workflow" className="hover:text-cyan-300 transition-colors whitespace-nowrap shrink-0">
-              License Gate
+              Guard Spec
             </a>
             <a href="#source" className="hover:text-cyan-300 transition-colors whitespace-nowrap shrink-0">
               loader.js Source
@@ -163,11 +258,11 @@ export default function App() {
                     Chart Canvas Environment
                   </p>
                   <h1 className="text-xl font-bold text-white mt-1">
-                    USD/BDT (OTC) · Live Loader Testbed
+                    USD/BDT (OTC) · Running Candle Testbed
                   </h1>
                 </div>
-                <span className="text-xs font-mono tabular-nums text-slate-300">
-                  Quote 128.735
+                <span className="text-xs font-mono tabular-nums text-cyan-300">
+                  Quote {liveQuote.toFixed(3)}
                 </span>
               </div>
 
@@ -179,21 +274,21 @@ export default function App() {
                       key={y}
                       x1="0"
                       y1={y}
-                      x2="555"
+                      x2="545"
                       y2={y}
                       stroke="rgba(148,163,184,0.1)"
                       strokeDasharray="3 3"
                     />
                   ))}
                   <line
-                    x1="380"
+                    x1="496"
                     y1="10"
-                    x2="380"
+                    x2="496"
                     y2="230"
                     stroke="rgba(255,255,255,0.22)"
                     strokeDasharray="4 4"
                   />
-                  {SAMPLE_CANDLES.map((c, idx) => {
+                  {candles.map((c, idx) => {
                     const x = 34 + idx * 42;
                     const bullish = c.c >= c.o;
                     const color = bullish ? "#22c55e" : "#ef4444";
@@ -221,16 +316,60 @@ export default function App() {
                       </g>
                     );
                   })}
-                  <text x="560" y="64" fill="#94a3b8" fontSize="11" fontFamily="JetBrains Mono">
-                    128.900
+                  <line
+                    x1="0"
+                    y1={toY(liveQuote)}
+                    x2="545"
+                    y2={toY(liveQuote)}
+                    stroke="rgba(34,211,238,0.45)"
+                    strokeDasharray="2 3"
+                  />
+                  <text x="552" y="54" fill="#94a3b8" fontSize="11" fontFamily="JetBrains Mono">
+                    {maxPrice.toFixed(3)}
                   </text>
-                  <text x="560" y="135" fill="#94a3b8" fontSize="11" fontFamily="JetBrains Mono">
-                    128.850
+                  <text x="552" y="130" fill="#94a3b8" fontSize="11" fontFamily="JetBrains Mono">
+                    {((maxPrice + minPrice) / 2).toFixed(3)}
                   </text>
-                  <text x="560" y="205" fill="#22d3ee" fontSize="11" fontFamily="JetBrains Mono">
-                    128.735
+                  <text
+                    x="552"
+                    y={Math.min(228, Math.max(24, toY(liveQuote) + 4))}
+                    fill="#22d3ee"
+                    fontSize="11"
+                    fontFamily="JetBrains Mono"
+                  >
+                    {liveQuote.toFixed(3)}
                   </text>
                 </svg>
+              </div>
+
+              {/* Simulated Quotex Trade Buttons (#trade-button-up / #trade-button-down) */}
+              <div id="trade-button" className="mt-4 grid grid-cols-2 gap-3">
+                <button
+                  id="trade-button-up"
+                  type="button"
+                  onClick={() => triggerSimulatedTrade("BUY")}
+                  className={`inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-extrabold uppercase tracking-wider border transition-all cursor-pointer ${
+                    activeSide === "BUY"
+                      ? "bg-emerald-500 text-slate-950 border-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.45)]"
+                      : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30"
+                  }`}
+                >
+                  <ArrowUpRight className="w-4 h-4" />
+                  <span>BUY (UP)</span>
+                </button>
+                <button
+                  id="trade-button-down"
+                  type="button"
+                  onClick={() => triggerSimulatedTrade("SELL")}
+                  className={`inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-extrabold uppercase tracking-wider border transition-all cursor-pointer ${
+                    activeSide === "SELL"
+                      ? "bg-rose-500 text-white border-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.45)]"
+                      : "bg-rose-500/20 text-rose-300 border-rose-500/40 hover:bg-rose-500/30"
+                  }`}
+                >
+                  <ArrowDownRight className="w-4 h-4" />
+                  <span>SELL (DOWN)</span>
+                </button>
               </div>
             </div>
 
@@ -266,30 +405,30 @@ export default function App() {
               <div className="flex items-center gap-2.5 text-cyan-400">
                 <ShieldCheck className="w-5 h-5" />
                 <h2 className="text-base font-bold text-white">
-                  Supabase License Gate &amp; Workflow
+                  TradePilot Guard &amp; Price Bias
                 </h2>
               </div>
 
               <div className="space-y-3 text-sm text-slate-300 leading-relaxed">
                 <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
                   <span className="text-slate-400">Popup Title</span>
-                  <span className="font-semibold text-white">TradePilot Compounding Bot</span>
+                  <span className="font-semibold text-white">TradePilot Guard</span>
+                </div>
+                <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
+                  <span className="text-slate-400">BUY Workflow</span>
+                  <span className="text-emerald-400 font-medium">Running candle moves UP</span>
+                </div>
+                <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
+                  <span className="text-slate-400">SELL Workflow</span>
+                  <span className="text-rose-400 font-medium">Running candle moves DOWN</span>
                 </div>
                 <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
                   <span className="text-slate-400">Supabase Table</span>
                   <span className="font-mono text-xs text-cyan-300">ishak_licenses</span>
                 </div>
                 <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
-                  <span className="text-slate-400">Clipboard Paste</span>
-                  <span className="text-slate-200">Paste button + manual input</span>
-                </div>
-                <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
-                  <span className="text-slate-400">Expiry Enforcement</span>
-                  <span className="text-slate-200">Auto-stops engine when expired</span>
-                </div>
-                <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
-                  <span className="text-slate-400">Trader ID Gate</span>
-                  <span className="text-emerald-400 font-medium">Removed (License only)</span>
+                  <span className="text-slate-400">Expiry Watchdog</span>
+                  <span className="text-slate-200">Stops engine on expiry</span>
                 </div>
               </div>
 
