@@ -1,14 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
-  Check,
-  Copy,
   Download,
+  Eye,
+  EyeOff,
+  Lock,
+  LogOut,
   Play,
   RotateCcw,
   ShieldCheck,
 } from "lucide-react";
+import {
+  clearPreviewSession,
+  isPreviewSessionActive,
+  persistPreviewSession,
+  verifyPreviewPassword,
+} from "./auth";
 
 declare global {
   interface Window {
@@ -46,14 +54,19 @@ class SimQuoteSocket extends EventTarget {
 }
 
 export default function App() {
+  const [unlocked, setUnlocked] = useState<boolean>(() => isPreviewSessionActive());
+  const [passwordInput, setPasswordInput] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+
   const [loaderCode, setLoaderCode] = useState<string>("");
-  const [copied, setCopied] = useState(false);
   const [loaderMounted, setLoaderMounted] = useState(false);
   const [candles, setCandles] = useState<Candle[]>(INITIAL_CANDLES);
   const [liveQuote, setLiveQuote] = useState<number>(128.735);
   const [activeSide, setActiveSide] = useState<"BUY" | "SELL" | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>(
-    "Launch loader.js, verify a license, then test BUY (UP) or SELL (DOWN) on the running candle."
+    "Launch loader.js, verify a license (1 device bound), then test BUY or SELL."
   );
 
   const simSocketRef = useRef<SimQuoteSocket | null>(null);
@@ -61,6 +74,7 @@ export default function App() {
   const tradeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (!unlocked) return;
     let active = true;
     fetch("/loader.js", { cache: "no-store" })
       .then((r) => r.text())
@@ -68,22 +82,23 @@ export default function App() {
         if (active) setLoaderCode(txt);
       })
       .catch(() => {
-        if (active) setStatusMessage("Could not load /loader.js preview.");
+        if (active) setStatusMessage("Could not load /loader.js build.");
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [unlocked]);
 
   useEffect(() => {
+    if (!unlocked) return;
     const timer = window.setInterval(() => {
       setLoaderMounted(Boolean(window.__qxCandleConsole));
     }, 400);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [unlocked]);
 
-  // Simulated WebSocket stream so loader.js MessageEvent.prototype.data hook mutates the running candle live
   useEffect(() => {
+    if (!unlocked) return;
     const sock = new SimQuoteSocket();
     simSocketRef.current = sock;
 
@@ -130,7 +145,44 @@ export default function App() {
       sock.removeEventListener("message", onQuoteMsg);
       if (tradeTimerRef.current) window.clearTimeout(tradeTimerRef.current);
     };
-  }, []);
+  }, [unlocked]);
+
+  const handleUnlockSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (authBusy) return;
+    const candidate = passwordInput.trim();
+    if (!candidate) {
+      setAuthError("Please enter the access password.");
+      return;
+    }
+    setAuthBusy(true);
+    setAuthError("");
+    try {
+      const ok = await verifyPreviewPassword(candidate);
+      if (!ok) {
+        setAuthError("Access Denied — Incorrect password.");
+        return;
+      }
+      persistPreviewSession();
+      setPasswordInput("");
+      setUnlocked(true);
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const handleLockPreview = () => {
+    if (window.qxUninstall) {
+      window.qxUninstall();
+    }
+    const existing = document.getElementById("tp-live-loader-script");
+    if (existing) existing.remove();
+    clearPreviewSession();
+    setLoaderCode("");
+    setLoaderMounted(false);
+    setActiveSide(null);
+    setUnlocked(false);
+  };
 
   const launchLoaderPopup = () => {
     if (window.qxUninstall) {
@@ -144,7 +196,7 @@ export default function App() {
     script.src = `/loader.js?t=${Date.now()}`;
     script.onload = () => {
       setLoaderMounted(true);
-      setStatusMessage("loader.js injected — TradePilot Guard popup is active.");
+      setStatusMessage("Multi-layer Base64 loader.js injected — TradePilot Guard popup active.");
     };
     script.onerror = () => {
       setStatusMessage("Failed to inject /loader.js.");
@@ -172,20 +224,9 @@ export default function App() {
     tradeTimerRef.current = window.setTimeout(() => setActiveSide(null), 5800);
     setStatusMessage(
       side === "BUY"
-        ? "BUY triggered — if license is verified, running candle biases UPWARD."
-        : "SELL triggered — if license is verified, running candle biases DOWNWARD."
+        ? "BUY triggered — running candle rises ~1–2 inches above entry when verified."
+        : "SELL triggered — running candle drops ~1–2 inches below entry when verified."
     );
-  };
-
-  const copyCode = async () => {
-    if (!loaderCode) return;
-    try {
-      await navigator.clipboard.writeText(loaderCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setStatusMessage("Clipboard access blocked — use Download loader.js instead.");
-    }
   };
 
   const downloadFile = () => {
@@ -200,6 +241,104 @@ export default function App() {
     a.remove();
     URL.revokeObjectURL(url);
   };
+
+  if (!unlocked) {
+    return (
+      <div className="min-h-screen bg-[#040913] text-slate-100 flex items-center justify-center p-5 relative overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at 25% 20%, rgba(14,165,233,0.18), transparent 42%), radial-gradient(circle at 78% 82%, rgba(16,185,129,0.12), transparent 44%)",
+          }}
+        />
+        <form
+          onSubmit={handleUnlockSubmit}
+          className="relative w-full max-w-[350px] rounded-[22px] overflow-hidden border border-sky-200/25 bg-gradient-to-br from-[#162b4d]/80 via-[#0a172e]/90 to-[#050d1c]/95 backdrop-blur-2xl shadow-[0_28px_64px_rgba(0,0,0,0.78),inset_0_1px_1px_rgba(255,255,255,0.22)] p-6 space-y-5"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl overflow-hidden border border-sky-300/40 bg-slate-950 shrink-0 shadow-[0_6px_16px_rgba(34,211,238,0.2)]">
+              <img
+                src="/assets/aistudio/file_000000007b2c820aa590b734c3908bdc_8d5171c0.png"
+                alt="TradePilot Guard"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-extrabold tracking-tight text-white">
+                  TradePilot <span className="text-sky-400">Guard</span>
+                </h1>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-rose-600 text-white">
+                  LOCKED
+                </span>
+              </div>
+              <p className="text-[11px] font-mono uppercase tracking-wider text-sky-300/80 mt-0.5">
+                Protected Preview Gate
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-700/60 bg-slate-950/70 px-3.5 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-slate-300">
+              <Lock className="w-4 h-4 text-sky-400 shrink-0" />
+              <span>Password Required</span>
+            </div>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-amber-300">
+              SHA-256
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="preview-pass-input"
+              className="block text-[10px] font-mono uppercase tracking-widest text-slate-400"
+            >
+              Access Password
+            </label>
+            <div className="relative">
+              <input
+                id="preview-pass-input"
+                type={showPassword ? "text" : "password"}
+                value={passwordInput}
+                onChange={(e) => {
+                  setPasswordInput(e.target.value);
+                  if (authError) setAuthError("");
+                }}
+                placeholder="Enter access password"
+                autoFocus
+                autoComplete="off"
+                className="w-full h-11 pl-3.5 pr-10 rounded-xl bg-[#040a16]/90 border border-slate-700/80 text-sm font-mono text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 shadow-[inset_0_3px_8px_rgba(0,0,0,0.65)]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-sky-300 cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {authError ? (
+            <div className="rounded-xl border border-rose-500/40 bg-rose-950/60 px-3 py-2 text-xs font-semibold text-rose-200 text-center">
+              {authError}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={authBusy}
+            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-widest text-slate-950 bg-gradient-to-b from-cyan-300 via-cyan-400 to-sky-600 border-t border-white/75 shadow-[0_4px_0_#0369a1,0_10px_22px_rgba(6,182,212,0.42)] hover:brightness-105 active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-70"
+          >
+            {authBusy ? "Verifying..." : "Unlock Preview"}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   const allValues = candles.flatMap((c) => [c.h, c.l]);
   const minPrice = Math.min(128.7, ...allValues) - 0.015;
@@ -227,10 +366,7 @@ export default function App() {
               Live Testbed
             </a>
             <a href="#workflow" className="hover:text-cyan-300 transition-colors whitespace-nowrap shrink-0">
-              Guard Spec
-            </a>
-            <a href="#source" className="hover:text-cyan-300 transition-colors whitespace-nowrap shrink-0">
-              loader.js Source
+              Security &amp; Bias
             </a>
           </nav>
 
@@ -242,6 +378,14 @@ export default function App() {
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>Launch Popup</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleLockPreview}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Lock</span>
             </button>
           </div>
         </div>
@@ -405,30 +549,33 @@ export default function App() {
               <div className="flex items-center gap-2.5 text-cyan-400">
                 <ShieldCheck className="w-5 h-5" />
                 <h2 className="text-base font-bold text-white">
-                  TradePilot Guard &amp; Price Bias
+                  TradePilot Guard · Security
                 </h2>
               </div>
 
-              <div className="space-y-3 text-sm text-slate-300 leading-relaxed">
+              <div className="space-y-2.5 text-sm text-slate-300 leading-relaxed">
                 <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
-                  <span className="text-slate-400">Popup Title</span>
-                  <span className="font-semibold text-white">TradePilot Guard</span>
+                  <span className="text-slate-400">Preview Lock</span>
+                  <span className="text-emerald-400 font-medium">Salted SHA-256 Gate</span>
                 </div>
                 <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
-                  <span className="text-slate-400">BUY Workflow</span>
-                  <span className="text-emerald-400 font-medium">Running candle moves UP</span>
+                  <span className="text-slate-400">BUY / SELL Range</span>
+                  <span className="text-emerald-400 font-medium">Bounded ~1–2 in cap</span>
                 </div>
                 <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
-                  <span className="text-slate-400">SELL Workflow</span>
-                  <span className="text-rose-400 font-medium">Running candle moves DOWN</span>
+                  <span className="text-slate-400">Device Binding</span>
+                  <span className="text-amber-300 font-medium">1 License = 1 Device</span>
                 </div>
                 <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
-                  <span className="text-slate-400">Supabase Table</span>
-                  <span className="font-mono text-xs text-cyan-300">ishak_licenses</span>
+                  <span className="text-slate-400">2nd Device Status</span>
+                  <span className="font-mono text-xs text-rose-400">Device Limit Restricted</span>
                 </div>
                 <div className="py-2 border-b border-slate-800/80 flex items-center justify-between gap-4">
-                  <span className="text-slate-400">Expiry Watchdog</span>
-                  <span className="text-slate-200">Stops engine on expiry</span>
+                  <span className="text-slate-400">loader.js Protection</span>
+                  <span className="inline-flex items-center gap-1.5 text-cyan-300 font-mono text-xs">
+                    <Lock className="w-3.5 h-3.5" />
+                    Minified + XOR + Base64
+                  </span>
                 </div>
               </div>
 
@@ -455,6 +602,17 @@ export default function App() {
                   {`javascript:(()=>{fetch("${typeof window !== "undefined" ? window.location.origin : ""}/loader.js?t="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(eval)})();`}
                 </code>
               </div>
+
+              <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-xs text-slate-300 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>
+                    <strong className="text-white font-mono">loader.js</strong> hardened build (
+                    {loaderCode ? `${Math.round(loaderCode.length / 1024)} KB` : "..."})
+                  </span>
+                </div>
+                <span className="font-mono text-[11px] text-emerald-400 shrink-0">READY</span>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-2.5 pt-2">
@@ -462,45 +620,13 @@ export default function App() {
                 type="button"
                 onClick={downloadFile}
                 disabled={!loaderCode}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-cyan-400 text-slate-950 hover:bg-cyan-300 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-cyan-400 text-slate-950 hover:bg-cyan-300 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Download className="w-4 h-4" />
-                <span>Download loader.js</span>
-              </button>
-              <button
-                type="button"
-                onClick={copyCode}
-                disabled={!loaderCode}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-100 border border-slate-700 hover:bg-slate-700 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
-              >
-                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                <span>{copied ? "Copied!" : "Copy Code"}</span>
+                <span>Download Protected loader.js</span>
               </button>
             </div>
           </div>
-        </section>
-
-        {/* Source Code Viewer */}
-        <section id="source" className="rounded-2xl border border-slate-800 bg-[#08111f] overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-bold text-white font-mono">loader.js</span>
-              <span className="text-xs text-slate-400">
-                {loaderCode ? `${loaderCode.split("\n").length} lines` : "Loading..."}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={copyCode}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? "Copied" : "Copy"}</span>
-            </button>
-          </div>
-          <pre className="p-5 text-xs font-mono text-slate-300 overflow-x-auto max-h-[420px] leading-relaxed">
-            <code>{loaderCode || "Loading loader.js..."}</code>
-          </pre>
         </section>
       </main>
     </div>
